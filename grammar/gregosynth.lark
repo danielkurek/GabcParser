@@ -1,0 +1,18 @@
+start: notation
+
+notation: cleff? part+
+
+part: lyrics notes
+
+STRING: /.+?/i
+
+MUSIC_SYMBOL: "<m>"
+MUSIC_LETTER: /./s
+MUSIC_STRING: (MUSIC_SYMBOL MUSIC_LETTER)+
+
+C_CLEF: MUSIC_SYMBOL "c"i (MUSIC_SYMBOL "b"i)? MUSIC_SYMBOL /[1-4]/
+F_CLEF: MUSIC_SYMBOL "f"i MUSIC_SYMBOL /[3-4]/
+cleff : "(" (C_CLEF | F_CLEF) ")"
+
+lyrics: /[ a-zA-Z0-9;áéíóúÁÉÍÓÚ:.\/,æ-]+/i+
+notes: "(" MUSIC_STRING ")"
