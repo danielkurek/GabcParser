@@ -1,0 +1,133 @@
+// grammar
+WS: /[ \n\r\t]/
+start: syllable+
+syllable: (syl_lyric_symbols? SYLLABLE? close_text_modifiers? syl_musical_symbols? WS?)
+syl_lyric_symbols: lyric_symbols open_text_modifiers?
+lyric_symbols: OPEN_LYRIC lyric CLOSE_LYRIC
+lyric: V_LYRIC | R_LYRIC | A_LYRIC | OE_LYRIC | AE_LYRIC
+open_text_modifiers: OPEN_BOLD | OPEN_ITALIC | OPEN_COLOR | OPEN_UNDERLINE | OPEN_SMALL_CAPS
+close_text_modifiers: CLOSE_BOLD | CLOSE_ITALIC | CLOSE_COLOR | CLOSE_UNDERLINE | CLOSE_SMALL_CAPS
+syl_musical_symbols: (PARENTH_OPEN unknown_prefix? musical_symbol* unknown_suffix? PARENTH_CLOSE)
+unknown_prefix: MUSIC_TAG "1"
+unknown_suffix: MUSIC_TAG "!" | MUSIC_TAG neumatic_cut
+musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | uncertain_reading | unknown_musical_symbol)
+uncertain_reading: "r" MUSIC_TAG "1".."7"
+unknown_musical_symbol: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T" | "\"" | "”" | "“" | "¡" | MUSIC_TAG | stem | WS | "|" | CHAR_PLUS | "»"
+clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number
+clef_symbol: CHAR_C | CHAR_F
+clef_flat: CHAR_B
+clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+note: (prefix MUSIC_TAG)* pitch (MUSIC_TAG suffix)* //(MUSIC_TAG attachment)*
+prefix: no_space | remove_first_stem | neumatic_cut | porrectus | malformed_prefix
+malformed_prefix: "*" | "\"" | stem | "w"
+porrectus: PORRECTUS
+no_space: EXCLAM_MARK
+remove_first_stem: AT
+neumatic_cut: SLASH (MUSIC_TAG (SLASH | factor_number))?
+factor_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6
+pitch: square_pitch | rhombus_pitch
+square_pitch: "a".."m" | "r"
+rhombus_pitch: CHAR_A2M_
+suffix: stem | shape | accidental | rhythmic_sign
+stem: virga_left | virga_right
+virga_left: CHAR_V_
+virga_right: CHAR_V
+shape: strophicus | quilisma | oriscus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up
+strophicus: CHAR_S
+quilisma: CHAR_W | CHAR_W_
+oriscus: CHAR_O | CHAR_O_
+liquescent: CHAR_TILDE
+liquescent_two_tails_down: CHAR_GT
+liquescent_two_tails_up: CHAR_LT
+accidental: flat | natural | sharp
+flat: CHAR_X
+natural: CHAR_Y
+sharp: CHAR_HASH
+rhythmic_sign: episema_vertical | episema_horizontal | punctum_mora
+episema_vertical: APOSTROPHE
+episema_horizontal: UNDERSCORE position_horizontal_episema?
+position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+punctum_mora: DOT
+custos: CHAR_Z (MUSIC_TAG NUM_0)? | CHAR_Z_
+separation_bar: (SLASH MUSIC_TAG)? (bar_small | APOSTROPHE | bar_finallis | bar_maxima | bar_maior | COLON (MUSIC_TAG (QUESTION_MARK | APOSTROPHE))?)
+bar_small: COMMA (MUSIC_TAG (UNDERSCORE | NUM_0))?
+bar_maxima: COLON
+bar_finallis: COLON MUSIC_TAG COLON
+bar_maior: SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+
+// lexical
+
+MUSIC_TAG: "<m>"
+
+CHAR_A: "a"
+CHAR_B: "b"
+CHAR_C: "c"
+CHAR_D: "d"
+CHAR_E: "e"
+CHAR_F: "f"
+CHAR_G: "g"
+CHAR_H: "h"
+CHAR_I: "i"
+CHAR_J: "j"
+CHAR_K: "k"
+CHAR_L: "l"
+CHAR_N: "n"
+CHAR_O: "o"
+CHAR_S: "s"
+CHAR_V: "v"
+CHAR_W: "w"
+CHAR_X: "x"
+CHAR_Y: "y"
+CHAR_Z: "z"
+CHAR_O_: "O"
+CHAR_V_: "V"
+CHAR_W_: "W"
+CHAR_Z_: "Z"
+CHAR_A2M_: "A".."M"
+CHAR_LT: "<"
+CHAR_GT: ">"
+CHAR_TILDE: "~"
+CHAR_HASH: "#"
+CHAR_PLUS: "+"
+DOT: "."
+APOSTROPHE: "'"
+UNDERSCORE: "_"
+MINUS: "-"
+NUM_0: "0"
+NUM_1: "1"
+NUM_2: "2"
+NUM_3: "3"
+NUM_4: "4"
+NUM_5: "5"
+NUM_6: "6"
+QUESTION_MARK: "?"
+EXCLAM_MARK: "!"
+SLASH: "/"
+AT: "@"
+SQ_BRACKET_OPEN: "["
+SQ_BRACKET_CLOSE: "]"
+PARENTH_OPEN: "("
+PARENTH_CLOSE: ")"
+OPEN_LYRIC: "<sp>"
+OPEN_BOLD: "<b>"
+OPEN_ITALIC: "<i>"
+OPEN_COLOR: "<c>"
+OPEN_UNDERLINE: "<u>"
+OPEN_SMALL_CAPS: "<sc>"
+CLOSE_LYRIC: "</sp>"
+CLOSE_BOLD: "</b>"
+CLOSE_ITALIC: "</i>"
+CLOSE_COLOR: "</c>"
+CLOSE_UNDERLINE: "</u>"
+CLOSE_SMALL_CAPS: "</sc>"
+V_LYRIC: "V/"
+R_LYRIC: "R/"
+A_LYRIC: "A/"
+OE_LYRIC: "óe"
+AE_LYRIC: "áe"
+
+SYLLABLE: /[a-zA-Z0-9;áéíóúÁÉÍÓÚ:.\/,æ-]+/ | "*"+
+PORRECTUS: "º" | "°" | "ª"
+COMMA: ","
+SEMICOLON: ";"
+COLON: ":"
