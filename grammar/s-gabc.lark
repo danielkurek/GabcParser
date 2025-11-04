@@ -10,24 +10,25 @@ close_text_modifiers: CLOSE_BOLD | CLOSE_ITALIC | CLOSE_COLOR | CLOSE_UNDERLINE 
 syl_musical_symbols: (PARENTH_OPEN unknown_prefix? musical_symbol* unknown_suffix? PARENTH_CLOSE)
 unknown_prefix: MUSIC_TAG "1"
 unknown_suffix: MUSIC_TAG "!" | MUSIC_TAG neumatic_cut
-musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | uncertain_reading | unknown_musical_symbol)
-uncertain_reading: "r" MUSIC_TAG "1".."7"
-unknown_musical_symbol: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T" | "\"" | "”" | "“" | "¡" | MUSIC_TAG | stem | WS | "|" | CHAR_PLUS | "»"
+musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | unknown_musical_symbol | clef_change)
+unknown_musical_symbol: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T" | "\"" | "”" | "“" | "¡" | stem | WS | "|" | CHAR_PLUS | "»"
 clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number
 clef_symbol: CHAR_C | CHAR_F
 clef_flat: CHAR_B
 clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+clef_change: neumatic_cut MUSIC_TAG clef
 note: (prefix MUSIC_TAG)* pitch (MUSIC_TAG suffix)* //(MUSIC_TAG attachment)*
 prefix: no_space | remove_first_stem | neumatic_cut | porrectus | malformed_prefix
-malformed_prefix: "*" | "\"" | stem | "w"
+malformed_prefix: "*" | "\"" | "w"
 porrectus: PORRECTUS
 no_space: EXCLAM_MARK
 remove_first_stem: AT
 neumatic_cut: SLASH (MUSIC_TAG (SLASH | factor_number))?
 factor_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6
-pitch: square_pitch | rhombus_pitch
-square_pitch: "a".."m" | "r"
+pitch: square_pitch | rhombus_pitch | uncertain_reading
+square_pitch: "a".."m"
 rhombus_pitch: CHAR_A2M_
+uncertain_reading: "r" (MUSIC_TAG "1".."7")?
 suffix: stem | shape | accidental | rhythmic_sign
 stem: virga_left | virga_right
 virga_left: CHAR_V_
