@@ -1,18 +1,229 @@
-start: notation
+// grammar
+start: syllable+
+syllable: (syl_lyric_symbols | syl_musical_symbols)
+syl_lyric_symbols: modified_lyrics | SYLLABLE | WS
+modified_lyrics: special_lyric
+               | bold_text
+               | italic_text
+               | color_text
+               | underline_text
+               | small_caps_text
+               | teletype_text
+               | nlba_text
+               | elision_text
+               | above_line_text
+               | euouae_text
+               | tex_text
+               | syllable_centering
+special_lyric: OPEN_LYRIC_SPECIAL SYLLABLE* CLOSE_LYRIC_SPECIAL
+bold_text: OPEN_BOLD syl_lyric_symbols* CLOSE_BOLD
+italic_text: OPEN_ITALIC syl_lyric_symbols* CLOSE_ITALIC
+color_text: OPEN_COLOR syl_lyric_symbols* CLOSE_COLOR
+underline_text: OPEN_UNDERLINE syl_lyric_symbols* CLOSE_UNDERLINE
+small_caps_text: OPEN_SMALL_CAPS syl_lyric_symbols* CLOSE_SMALL_CAPS
+teletype_text: OPEN_TELETYPE syl_lyric_symbols* CLOSE_TELETYPE
+nlba_text: OPEN_NLBA syl_lyric_symbols* CLOSE_NLBA?
+elision_text: OPEN_ELISION syl_lyric_symbols* CLOSE_ELISION
+above_line_text: OPEN_ABOVE_LINE syl_lyric_symbols* CLOSE_ABOVE_LINE
+euouae_text: OPEN_EUOUAE syllable+ CLOSE_EUOUAE?
+tex_text: OPEN_TEX TEX_SYMBOLS* CLOSE_TEX
+syllable_centering: CURLY_BRACKET_OPEN  SYLLABLE* CURLY_BRACKET_CLOSE
 
-notation: cleff? part+
 
-part: lyrics notes
+syl_musical_symbols: PARENTH_OPEN musical_symbol* PARENTH_CLOSE
 
-STRING: /.+?/i
+musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | neume_spacing | line_break)
 
-MUSIC_SYMBOL: "<m>"
-MUSIC_LETTER: /./s
-MUSIC_STRING: (MUSIC_SYMBOL MUSIC_LETTER)+
+clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number (MUSIC_TAG linked_clef)?
+clef_symbol: CHAR_C | CHAR_F
+clef_flat: CHAR_B
+clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+linked_clef: AT MUSIC_TAG clef
 
-C_CLEF: MUSIC_SYMBOL "c"i (MUSIC_SYMBOL "b"i)? MUSIC_SYMBOL /[1-4]/
-F_CLEF: MUSIC_SYMBOL "f"i MUSIC_SYMBOL /[3-4]/
-cleff : "(" (C_CLEF | F_CLEF) ")"
+note: (prefix MUSIC_TAG)* pitch repetition? (MUSIC_TAG suffix)*
 
-lyrics: /[ a-zA-Z0-9;áéíóúÁÉÍÓÚ:.\/,æ-]+/i+
-notes: "(" MUSIC_STRING ")"
+prefix: initio_debilis | remove_stem | zero_width_space
+initio_debilis: MINUS
+remove_stem: AT
+neume_spacing: normal_space | zero_width_space | (EXCLAM_MARK MUSIC_TAG)? SLASH (MUSIC_TAG (SLASH | EXCLAM_MARK | factor_number))?
+factor_number: NUM_0 | SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? (MUSIC_TAG NUM)+ (MUSIC_TAG DOT (MUSIC_TAG NUM)+)? MUSIC_TAG SQ_BRACKET_CLOSE
+zero_width_space: EXCLAM_MARK (MUSIC_TAG normal_space)?
+normal_space: SPACE
+
+pitch: square_pitch | rhombus_pitch
+square_pitch: "a".."m"
+rhombus_pitch: CHAR_A2M_ (MUSIC_TAG rhombus_pitch_shape)?
+rhombus_pitch_shape: NUM_0 | NUM_1 | NUM_2
+
+repetition: di_tristropha | bi_trivirga
+di_tristropha: MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S (MUSIC_TAG CHAR_S)?
+bi_trivirga: MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V (MUSIC_TAG CHAR_V)?
+
+
+suffix: stem | shape | accidental | rhythmic_sign | empty_note | note_accents | pitch_custos | custom_ledger_line
+
+stem: virga_left | virga_right
+virga_left: CHAR_V_
+virga_right: CHAR_V
+
+shape: oriscus | quilisma | strophicus | liquescent | liquescent_descending | liquescent_ascending | quadratum
+oriscus: oriscus_scapus | (CHAR_O | CHAR_O_) (MUSIC_TAG (NUM_0 | NUM_1))?
+oriscus_scapus: NUM_0
+quilisma: CHAR_W | CHAR_W_
+strophicus: CHAR_S
+liquescent: CHAR_TILDE
+liquescent_descending: CHAR_GT
+liquescent_ascending: CHAR_LT
+quadratum: CHAR_Q
+
+accidental: (flat | natural | sharp | soft_flat | soft_natural | soft_sharp) accidental_parenthesized?
+accidental_parenthesized: EXCLAM_MARK
+flat: CHAR_X
+natural: CHAR_Y
+sharp: CHAR_HASH
+soft_flat: CHAR_X_
+soft_natural: CHAR_Y_
+soft_sharp: CHAR_HASH MUSIC_TAG CHAR_HASH
+
+rhythmic_sign: punctum_mora | episema_vertical | episema_horizontal
+punctum_mora: DOT (MUSIC_TAG (NUM_0 | NUM_1))? // position arguments 0/1 not supported in Gregorio
+episema_vertical: APOSTROPHE (MUSIC_TAG position_vertical_episema)?
+position_vertical_episema: NUM_0 | NUM_1
+episema_horizontal: UNDERSCORE (MUSIC_TAG position_horizontal_episema)? (MUSIC_TAG position_tuning_episema)?
+position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+position_tuning_episema: SQ_BRACKET_OPEN episema_tuning_dimension? (MUSIC_TAG COLON episema_tuning_position)? episema_tuning_block? MUSIC_TAG SQ_BRACKET_CLOSE
+episema_tuning_dimension: ((MUSIC_TAG ("o" | "u"))? MUSIC_TAG ("l" | "h")) |  "m"
+episema_tuning_position: MUSIC_TAG "a".."m" (episema_tuning_position_num)?
+episema_tuning_position_num: MUSIC_TAG ("+" | "-") (MUSIC_NUMBER+ (MUSIC_TAG DOT)? MUSIC_NUMBER+ MUSIC_MM_UNIT)?
+episema_tuning_block: MUSIC_TAG ("{" | "}")
+MUSIC_NUMBER: MUSIC_TAG NUM
+MUSIC_MM_UNIT: MUSIC_TAG CHAR_M MUSIC_TAG CHAR_M
+
+empty_note: CHAR_R (MUSIC_TAG NUM_0)?
+
+note_accents: CHAR_R_ | CHAR_R MUSIC_TAG note_accent_type
+note_accent_type: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8
+
+pitch_custos: CHAR_PLUS
+
+custom_ledger_line: SQ_BRACKET_OPEN MUSIC_TAG ledger_type MUSIC_TAG COLON MUSIC_TAG (ledger_group_start | ledger_end_group | ledger_one_time) MUSIC_TAG SQ_BRACKET_CLOSE
+ledger_type: (CHAR_O | CHAR_U) MUSIC_TAG CHAR_L MUSIC_TAG CHAR_L
+ledger_one_time: NUM (MUSIC_TAG SEMICOLON MUSIC_TAG NUM)?
+ledger_group_start: NUM MUSIC_TAG CURLY_BRACKET_OPEN MUSIC_TAG NUM
+ledger_end_group: CURLY_BRACKET_CLOSE
+
+custos: CHAR_Z MUSIC_TAG NUM_0 // should be probably a prefix according to Gregorio but the data uses it differently
+
+separation_bar: (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor) (MUSIC_TAG separation_bar_suffix)*
+virgula: BACKTICK (MUSIC_TAG NUM_0)?
+bar_minimis: CARET (MUSIC_TAG NUM_0)?
+bar_small: COMMA (MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+bar_maior: COLON (MUSIC_TAG QUESTION_MARK)?
+bar_finallis: COLON MUSIC_TAG COLON
+bar_minor: SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+separation_bar_suffix: vertical_episema_modifier | bar_brace
+vertical_episema_modifier: APOSTROPHE
+bar_brace: UNDERSCORE
+
+line_break: (CHAR_Z | CHAR_Z_) (MUSIC_TAG (CHAR_PLUS | MINUS))?
+
+// lexical
+
+MUSIC_TAG: "<m>"
+
+CHAR_A: "a"
+CHAR_B: "b"
+CHAR_C: "c"
+CHAR_D: "d"
+CHAR_E: "e"
+CHAR_F: "f"
+CHAR_G: "g"
+CHAR_H: "h"
+CHAR_I: "i"
+CHAR_J: "j"
+CHAR_K: "k"
+CHAR_L: "l"
+CHAR_M: "m"
+CHAR_N: "n"
+CHAR_O: "o"
+CHAR_Q: "q"
+CHAR_R: "r"
+CHAR_S: "s"
+CHAR_U: "u"
+CHAR_V: "v"
+CHAR_W: "w"
+CHAR_X: "x"
+CHAR_Y: "y"
+CHAR_Z: "z"
+CHAR_O_: "O"
+CHAR_V_: "V"
+CHAR_W_: "W"
+CHAR_X_: "X"
+CHAR_Y_: "Y"
+CHAR_Z_: "Z"
+CHAR_R_: "R"
+CHAR_A2M_: "A".."M"
+CHAR_LT: "<"
+CHAR_GT: ">"
+CHAR_TILDE: "~"
+CHAR_HASH: "#"
+CHAR_PLUS: "+"
+DOT: "."
+APOSTROPHE: "'"
+UNDERSCORE: "_"
+MINUS: "-"
+NUM_0: "0"
+NUM_1: "1"
+NUM_2: "2"
+NUM_3: "3"
+NUM_4: "4"
+NUM_5: "5"
+NUM_6: "6"
+NUM_7: "7"
+NUM_8: "8"
+QUESTION_MARK: "?"
+EXCLAM_MARK: "!" | "¡"
+SLASH: "/"
+AT: "@"
+CURLY_BRACKET_OPEN: "{"
+CURLY_BRACKET_CLOSE: "}"
+SQ_BRACKET_OPEN: "["
+SQ_BRACKET_CLOSE: "]"
+PARENTH_OPEN: "("
+PARENTH_CLOSE: ")"
+OPEN_LYRIC_SPECIAL: "<sp>" | "<spp>" | "<ssp>" // officially only <sp> is allowed
+OPEN_BOLD: "<b>"
+OPEN_ITALIC: "<i>"
+OPEN_COLOR: "<c>"
+OPEN_UNDERLINE: "<ul>"
+OPEN_SMALL_CAPS: "<sc>"
+OPEN_TEX: "<v>"
+OPEN_TELETYPE: "<tt>"
+OPEN_NLBA: "<nlba>"
+OPEN_ELISION: "<e>"
+OPEN_ABOVE_LINE: "<alt>"
+CLOSE_LYRIC_SPECIAL: "</sp>"
+CLOSE_BOLD: "</b>"
+CLOSE_ITALIC: "</i>"
+CLOSE_COLOR: "</c>"
+CLOSE_UNDERLINE: "</ul>"
+CLOSE_SMALL_CAPS: "</sc>"
+CLOSE_TEX: "</v>"
+CLOSE_TELETYPE: "</tt>"
+CLOSE_NLBA: "</nlba>"
+CLOSE_ELISION: "</e>"
+CLOSE_ABOVE_LINE: "</alt>"
+
+SYLLABLE: /(\w|['&#~%!;:.?\/,-†+-✠])/ | "*"+
+WS: /\s/
+PORRECTUS: "º" | "°" | "ª"
+COMMA: ","
+SEMICOLON: ";"
+COLON: ":"
+CARET: "^"
+BACKTICK: "`"
+TEX_SYMBOLS: /[a-z0-9.;\\{} $]/i
+NUM: "0".."9"
+OPEN_EUOUAE: "<eu>"
+CLOSE_EUOUAE: "</eu>"
+SPACE: " "
