@@ -92,9 +92,9 @@ position_vertical_episema: NUM_0 | NUM_1
 episema_horizontal: UNDERSCORE (MUSIC_TAG position_horizontal_episema)? (MUSIC_TAG position_tuning_episema)?
 position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
 position_tuning_episema: SQ_BRACKET_OPEN episema_tuning_dimension? (MUSIC_TAG COLON episema_tuning_position)? episema_tuning_block? MUSIC_TAG SQ_BRACKET_CLOSE
-episema_tuning_dimension: ((MUSIC_TAG ("o" | "u"))? MUSIC_TAG ("l" | "h")) |  "m"
+episema_tuning_dimension: ((MUSIC_TAG (CHAR_O | CHAR_U))? MUSIC_TAG (CHAR_L | CHAR_H)) | "m"
 episema_tuning_position: MUSIC_TAG "a".."m" (episema_tuning_position_num)?
-episema_tuning_position_num: MUSIC_TAG ("+" | "-") (MUSIC_NUMBER+ (MUSIC_TAG DOT)? MUSIC_NUMBER+ MUSIC_MM_UNIT)?
+episema_tuning_position_num: MUSIC_TAG ("+" | "-") (MUSIC_NUMBER+ (MUSIC_TAG DOT MUSIC_NUMBER+)? MUSIC_MM_UNIT)?
 episema_tuning_block: MUSIC_TAG ("{" | "}")
 MUSIC_NUMBER: MUSIC_TAG NUM
 MUSIC_MM_UNIT: MUSIC_TAG CHAR_M MUSIC_TAG CHAR_M
