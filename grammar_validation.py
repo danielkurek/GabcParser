@@ -24,13 +24,13 @@ def csv_reader(file, skip_lines):
             yield row
 
 def worker_init(grammar_file_path):
-    global parser
-    parser = Lark.open(grammar_file_path)
+    global lark_parser
+    lark_parser = Lark.open(grammar_file_path)
 
 def process_row(row):
-    global parser
+    global lark_parser
     try:
-        parser.parse(row[1])
+        lark_parser.parse(row[1])
     except lark.exceptions.UnexpectedCharacters as err:
         return f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column}"
 
