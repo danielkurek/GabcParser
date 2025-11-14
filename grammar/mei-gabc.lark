@@ -1,0 +1,82 @@
+start: syllable+
+syllable: (syl_lyric_symbols | syl_musical_symbols | separation_bar)
+syl_lyric_symbols: SYLLABLE | WS
+
+syl_musical_symbols: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE | PARENTH_OPEN PARENTH_CLOSE
+musical_symbol: clef | note | separation_bar | accidental
+
+clef: clef_symbol clef_number
+clef_symbol: CHAR_C_ | CHAR_F_
+clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
+
+note: pitch (MINUS suffix)*
+
+pitch: "a".."h" NUM
+
+suffix: suffix_s | suffix_se | suffix_l | suffix_n | suffix_c | suffix_a
+suffix_s: CHAR_S // virga - stem on the right side (free standing note)
+suffix_se: CHAR_S CHAR_E // rhombus shape
+suffix_l: CHAR_L // connected with line (for prorrectus)
+suffix_n: CHAR_N // stem on the left side (when is closely followed with descending note)
+suffix_c: CHAR_C // stem from both sides
+suffix_a: CHAR_A // stem (on the right side) pointing upwards
+
+accidental: f_symbol | n_symbol
+f_symbol: CHAR_F // probably flat
+n_symbol: CHAR_N // probably sharp (or neutral)
+
+separation_bar: VERT_BAR
+
+CHAR_A: "a"
+CHAR_B: "b"
+CHAR_C: "c"
+CHAR_D: "d"
+CHAR_E: "e"
+CHAR_F: "f"
+CHAR_G: "g"
+CHAR_H: "h"
+CHAR_I: "i"
+CHAR_J: "j"
+CHAR_K: "k"
+CHAR_L: "l"
+CHAR_M: "m"
+CHAR_N: "n"
+CHAR_O: "o"
+CHAR_Q: "q"
+CHAR_R: "r"
+CHAR_S: "s"
+CHAR_U: "u"
+CHAR_V: "v"
+CHAR_W: "w"
+CHAR_X: "x"
+CHAR_Y: "y"
+CHAR_Z: "z"
+CHAR_C_: "C"
+CHAR_F_: "F"
+CHAR_O_: "O"
+CHAR_V_: "V"
+CHAR_W_: "W"
+CHAR_X_: "X"
+CHAR_Y_: "Y"
+CHAR_Z_: "Z"
+CHAR_R_: "R"
+MINUS: "-"
+NUM_0: "0"
+NUM_1: "1"
+NUM_2: "2"
+NUM_3: "3"
+NUM_4: "4"
+NUM_5: "5"
+NUM_6: "6"
+NUM_7: "7"
+NUM_8: "8"
+SQ_BRACKET_OPEN: "["
+SQ_BRACKET_CLOSE: "]"
+PARENTH_OPEN: "("
+PARENTH_CLOSE: ")"
+
+SYLLABLE: /(\w|['&#~%!;:.?\/,-†+-✠])/ | "*"+
+WS: /\s/
+NUM: "0".."9"
+SPACE: " "
+VERT_BAR: "|"
