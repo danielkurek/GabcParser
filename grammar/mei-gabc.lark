@@ -1,8 +1,9 @@
-start: syllable+
-syllable: (syl_lyric_symbols | syl_musical_symbols | separation_bar)
+start: syllable+ malformed_music?
+syllable: (syl_lyric_symbols | syl_musical_symbols | separation_bar | custos)
 syl_lyric_symbols: SYLLABLE | WS
 
 syl_musical_symbols: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE | PARENTH_OPEN PARENTH_CLOSE
+malformed_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)?
 musical_symbol: clef | note | separation_bar | accidental
 
 clef: clef_symbol clef_number
@@ -26,6 +27,8 @@ f_symbol: CHAR_F // probably flat
 n_symbol: CHAR_N // probably sharp (or neutral)
 
 separation_bar: VERT_BAR
+
+custos: CHAR_Z MINUS pitch
 
 CHAR_A: "a"
 CHAR_B: "b"
@@ -75,7 +78,7 @@ SQ_BRACKET_CLOSE: "]"
 PARENTH_OPEN: "("
 PARENTH_CLOSE: ")"
 
-SYLLABLE: /(\w|['&#~%!;:.?\/,-†+-✠])/ | "*"+
+SYLLABLE: /(\w|['&#~%!;:.?\/,†+✠])/ | "*"+
 WS: /\s/
 NUM: "0".."9"
 SPACE: " "
