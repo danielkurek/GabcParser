@@ -1,8 +1,8 @@
 // grammar
 WS: /[ \n\r\t]/
 start: syllable+
-syllable: (syl_lyric_symbols? SYLLABLE? close_text_modifiers? syl_musical_symbols? WS?)
-syl_lyric_symbols: lyric_symbols open_text_modifiers?
+syllable: syl_lyric_symbols | syl_musical_symbols
+syl_lyric_symbols: SYLLABLE | close_text_modifiers | open_text_modifiers | lyric_symbols | WS
 lyric_symbols: OPEN_LYRIC lyric CLOSE_LYRIC
 lyric: V_LYRIC | R_LYRIC | A_LYRIC | OE_LYRIC | AE_LYRIC
 open_text_modifiers: OPEN_BOLD | OPEN_ITALIC | OPEN_COLOR | OPEN_UNDERLINE | OPEN_SMALL_CAPS

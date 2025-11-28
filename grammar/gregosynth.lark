@@ -1,6 +1,6 @@
 // grammar
 start: syllable+
-syllable: (syl_lyric_symbols | syl_musical_symbols)
+syllable: syl_lyric_symbols | syl_musical_symbols
 syl_lyric_symbols: modified_lyrics | SYLLABLE | WS
 modified_lyrics: special_lyric
                | bold_text

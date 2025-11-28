@@ -1,8 +1,9 @@
-start: syllable+ malformed_music?
-syllable: (syl_lyric_symbols | syl_musical_symbols | separation_bar | custos)
+start: syllable+ malformed_syllable?
+syllable: syl_lyric_symbols | syl_musical_symbols
+malformed_syllable: malformed_music
 syl_lyric_symbols: SYLLABLE | WS
 
-syl_musical_symbols: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE | PARENTH_OPEN PARENTH_CLOSE
+syl_musical_symbols: separation_bar | custos | PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE | PARENTH_OPEN PARENTH_CLOSE
 malformed_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)?
 musical_symbol: clef | note | separation_bar | accidental
 
