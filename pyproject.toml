@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "GabcParser"
+version = "2025.0.0"
+dependencies = [
+    "lark"
+]
+classifiers = [
+    "Private :: Do Not Upload"
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+only-include = ["gabcparser"]
