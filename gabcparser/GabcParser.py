@@ -1,6 +1,6 @@
 from lark import Lark
 from typing import Literal
-from pathlib import Path
+import importlib.resources
 from . import grammars
 
 def load_parser(variation: Literal['gabc', 'mei-gabc', 's-gabc'], **kwargs) -> Lark:
@@ -8,6 +8,7 @@ def load_parser(variation: Literal['gabc', 'mei-gabc', 's-gabc'], **kwargs) -> L
         raise TypeError("`variation` should be of type str")
     if variation not in grammars.supported_grammars:
         raise ValueError(f"Invalid value of `variation`. Supported types {', '.join(f'\'{x}\'' for x in grammars.supported_grammars)}")
-    
-    parser = Lark.open(str(Path("grammar") / f"{variation}.lark"), **kwargs)
-    return parser
+    grammar_path = importlib.resources.files() / "grammars" / f"{variation}.lark"
+    with grammar_path.open("r", encoding="utf-8") as f:
+        parser = Lark(f, **kwargs)
+        return parser
