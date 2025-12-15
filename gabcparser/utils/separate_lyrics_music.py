@@ -6,6 +6,7 @@ from multiprocessing import Pool
 import tqdm
 from pathlib import Path
 from .. import grammars
+from .. import GabcParser
 
 parser = argparse.ArgumentParser(prog="Print lines that do not conform to specified grammar")
 parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (skip header)")
@@ -51,14 +52,14 @@ def csv_reader(file, skip_lines):
 
 def worker_init(grammar_file_path):
     global lark_parser
-    lark_parser = Lark.open(grammar_file_path)
+    lark_parser = GabcParser.load_parser(grammar_file_path)
 
 def process_row(row):
     global lark_parser
     return row[0], separate_lyrics_music(row[1], lark_parser)
 
 def main(args: argparse.Namespace):
-    gabc_parser = Lark.open(args.grammar)
+    gabc_parser = GabcParser.load_parser(args.grammar)
     csv_input = Path(args.csv_input)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
