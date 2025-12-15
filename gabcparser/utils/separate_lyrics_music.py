@@ -25,7 +25,7 @@ def filter_syllables(tree, pred):
         if pred(syl.children[0]):
             yield syl
 
-def separate_lyrics_music(text: str, parser: Lark):
+def separate_lyrics_music(text: str, parser: Lark, include_music_tag=False):
     try:
         tree = parser.parse(text)
     except lark_exceptions.UnexpectedCharacters:
@@ -36,7 +36,7 @@ def separate_lyrics_music(text: str, parser: Lark):
     music_tree = ParseTree("start", list(music_symbols))
 
     lyric_tokens = lyric_tree.scan_values(lambda v: isinstance(v, Token))
-    music_tokens = music_tree.scan_values(lambda v: isinstance(v, Token))
+    music_tokens = music_tree.scan_values(lambda v: isinstance(v, Token) and (include_music_tag or v.type != "MUSIC_TAG"))
     lyrics = "".join(token.value for token in lyric_tokens)
     music = "".join(token.value for token in music_tokens)
     return lyrics, music
