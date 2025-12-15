@@ -3,11 +3,12 @@ import argparse
 from PIL import Image
 import matplotlib.pyplot as plt
 
-parser = argparse.ArgumentParser(prog="Hugging face dataset show picture")
-parser.add_argument("-s", "--split", default="train", help="input files (templates)")
-parser.add_argument("dataset", help="Dataset name (from hugging face)")
-parser.add_argument("column", help="Column name")
-parser.add_argument("row", type=int, help="Row number")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="Hugging face dataset show picture")
+    parser.add_argument("-s", "--split", default="train", help="input files (templates)")
+    parser.add_argument("dataset", help="Dataset name (from hugging face)")
+    parser.add_argument("column", help="Column name")
+    parser.add_argument("row", type=int, help="Row number")
 
 
 def main(args: argparse.Namespace):

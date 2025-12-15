@@ -6,12 +6,13 @@ import tqdm
 from .. import grammars
 from .. import GabcParser
 
-parser = argparse.ArgumentParser(prog="Print lines that do not conform to specified grammar")
-parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
-parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
-parser.add_argument("--stop", action="store_true", help="Stop on first error (works only in single threaded mode")
-parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
-parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="Print lines that do not conform to specified grammar")
+    parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
+    parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
+    parser.add_argument("--stop", action="store_true", help="Stop on first error (works only in single threaded mode")
+    parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
+    parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
 
 def csv_reader(file, skip_lines):
     with open(file) as f:

@@ -8,12 +8,13 @@ from pathlib import Path
 from .. import grammars
 from .. import GabcParser
 
-parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
-parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
-parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
-parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
-parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
-parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
+    parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
+    parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
+    parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
+    parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
+    parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
 
 
 def filter_syllables(tree, pred):
