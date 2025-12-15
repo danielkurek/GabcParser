@@ -1,4 +1,3 @@
-from lark import Lark
 import lark
 import csv
 import argparse
