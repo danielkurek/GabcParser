@@ -3,15 +3,18 @@ syllable: syl_lyric_symbols | syl_musical_symbols
 malformed_syllable: malformed_music
 syl_lyric_symbols: SYLLABLE | WS
 
-syl_musical_symbols: separation_bar | custos | PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE | PARENTH_OPEN PARENTH_CLOSE
-malformed_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)?
-musical_symbol: clef | note | separation_bar | accidental
+syl_musical_symbols: separation_bar | custos | syl_musical_symbols_parentheses | PARENTH_OPEN PARENTH_CLOSE | malformed_music_salzinnes
+syl_musical_symbols_parentheses: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE
+malformed_music_salzinnes: PARENTH_OPEN note SPACE syl_musical_symbols_parentheses
+malformed_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)? | malformed_custos
+musical_symbol: clef | note | separation_bar | accidental | malformed_note
 
 clef: clef_symbol clef_number
 clef_symbol: CHAR_C_ | CHAR_F_
 clef_number: MINUS? (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
 
 note: pitch (MINUS suffix)*
+malformed_note: CHAR_S note
 
 pitch: "a".."h" NUM
 
@@ -30,6 +33,7 @@ n_symbol: CHAR_N // probably sharp (or neutral)
 separation_bar: VERT_BAR
 
 custos: CHAR_Z MINUS pitch
+malformed_custos: CHAR_G MINUS pitch
 
 CHAR_A: "a"
 CHAR_B: "b"
