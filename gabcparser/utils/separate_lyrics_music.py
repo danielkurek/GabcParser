@@ -12,26 +12,35 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
     parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
+    parser.add_argument("--filtered_symbol", type=str, default=None, help="Filter symbol that will be in place of filtered out parts")
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
 
 
-def filter_syllables(tree, pred):
+def filter_syllables(tree, pred, filtered_symbol=None):
     for syl in tree.children:
         assert syl.data in ["syllable", "malformed_syllable"]
         assert len(syl.children) == 1
         assert syl.children[0].data in ["syl_lyric_symbols", "syl_musical_symbols", "malformed_music"]
         if pred(syl.children[0]):
             yield syl
+        elif filtered_symbol is not None:
+            yield Token("filtered_symbol", filtered_symbol)
 
-def separate_lyrics_music(text: str, parser: Lark, include_music_tag=False):
+def separate_lyrics_music(text: str, parser: Lark, include_music_tag=False, filtered_symbol=None):
+    """
+    `text`: text compatible with grammar of `parser`
+    `parser`: Lark parser
+    `include_music_tag`: include MUSIC_TAG (default: `<m>`) in the music split
+    `filtered_symbol`: replace filtered parts with a symbol `filtered_symbol` - e.g. can be used to insert space between lyric/music parts separated with the other part (music/lyric)
+    """
     try:
         tree = parser.parse(text)
     except lark_exceptions.UnexpectedCharacters:
         return None, None
-    lyric_symbols = filter_syllables(tree, lambda x: x.data == "syl_lyric_symbols")
-    music_symbols = filter_syllables(tree, lambda x: x.data == "syl_musical_symbols" or x.data == "malformed_music")
+    lyric_symbols = filter_syllables(tree, lambda x: x.data == "syl_lyric_symbols", filtered_symbol)
+    music_symbols = filter_syllables(tree, lambda x: x.data == "syl_musical_symbols" or x.data == "malformed_music", filtered_symbol)
     lyric_tree = ParseTree("start", list(lyric_symbols))
     music_tree = ParseTree("start", list(music_symbols))
 
@@ -51,13 +60,16 @@ def csv_reader(file, skip_lines):
                 continue
             yield row
 
-def worker_init(grammar_file_path):
+def worker_init(grammar_file_path, filtered_symbol):
     global lark_parser
+    global _filtered_symbol
+    _filtered_symbol = filtered_symbol
     lark_parser = GabcParser.load_parser(grammar_file_path)
 
 def process_row(row):
     global lark_parser
-    return row[0], separate_lyrics_music(row[1], lark_parser)
+    global _filtered_symbol
+    return row[0], separate_lyrics_music(row[1], lark_parser, filtered_symbol=_filtered_symbol)
 
 def main(args: argparse.Namespace):
     gabc_parser = GabcParser.load_parser(args.grammar)
@@ -70,12 +82,12 @@ def main(args: argparse.Namespace):
     music_writer = csv.writer(music_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
     if args.threads is None:
         for row in csv_reader(args.csv_input, args.skip):
-            lyrics, music = separate_lyrics_music(row[1], gabc_parser)
+            lyrics, music = separate_lyrics_music(row[1], gabc_parser, filtered_symbol=args.filtered_symbol)
             lyric_writer.writerow((row[0], lyrics))
             music_writer.writerow((row[0], music))
 
     else:
-        pool = Pool(args.threads, initializer=worker_init, initargs=(args.grammar,))
+        pool = Pool(args.threads, initializer=worker_init, initargs=(args.grammar,args.filtered_symbol))
         total_lines = None
         with open(args.csv_input, "rb") as f:
             total_lines = sum(1 for _ in f)
