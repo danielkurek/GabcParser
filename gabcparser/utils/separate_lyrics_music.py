@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
     parser.add_argument("--filtered_symbol", type=str, default=None, help="Filter symbol that will be in place of filtered out parts")
+    parser.add_argument("--include_music_tag", default=False, action="store_true", help="Include music tag in music split")
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
@@ -60,16 +61,19 @@ def csv_reader(file, skip_lines):
                 continue
             yield row
 
-def worker_init(grammar_file_path, filtered_symbol):
+def worker_init(grammar_file_path, include_music_tag, filtered_symbol):
     global lark_parser
     global _filtered_symbol
+    global _include_music_tag
     _filtered_symbol = filtered_symbol
+    _include_music_tag = include_music_tag
     lark_parser = GabcParser.load_parser(grammar_file_path)
 
 def process_row(row):
     global lark_parser
     global _filtered_symbol
-    return row[0], separate_lyrics_music(row[1], lark_parser, filtered_symbol=_filtered_symbol)
+    global _include_music_tag
+    return row[0], separate_lyrics_music(row[1], lark_parser, _include_music_tag, _filtered_symbol)
 
 def main(args: argparse.Namespace):
     gabc_parser = GabcParser.load_parser(args.grammar)
@@ -82,12 +86,12 @@ def main(args: argparse.Namespace):
     music_writer = csv.writer(music_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
     if args.threads is None:
         for row in csv_reader(args.csv_input, args.skip):
-            lyrics, music = separate_lyrics_music(row[1], gabc_parser, filtered_symbol=args.filtered_symbol)
+            lyrics, music = separate_lyrics_music(row[1], gabc_parser, args.include_music_tag, args.filtered_symbol)
             lyric_writer.writerow((row[0], lyrics))
             music_writer.writerow((row[0], music))
 
     else:
-        pool = Pool(args.threads, initializer=worker_init, initargs=(args.grammar,args.filtered_symbol))
+        pool = Pool(args.threads, initializer=worker_init, initargs=(args.grammar, args.include_music_tag, args.filtered_symbol))
         total_lines = None
         with open(args.csv_input, "rb") as f:
             total_lines = sum(1 for _ in f)
