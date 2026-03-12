@@ -45,7 +45,7 @@ note: (prefix MUSIC_TAG)* pitch repetition? (MUSIC_TAG suffix)*
 prefix: initio_debilis | remove_stem
 initio_debilis: MINUS
 remove_stem: AT
-neume_spacing: normal_space | zero_width_space | (EXCLAM_MARK MUSIC_TAG)? SLASH (MUSIC_TAG (SLASH | EXCLAM_MARK | factor_number))?
+neume_spacing: normal_space | zero_width_space | SLASH (MUSIC_TAG (SLASH | EXCLAM_MARK | factor_number))?
 factor_number: NUM_0 | SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? (MUSIC_TAG NUM)+ (MUSIC_TAG DOT (MUSIC_TAG NUM)+)? MUSIC_TAG SQ_BRACKET_CLOSE
 zero_width_space: EXCLAM_MARK (MUSIC_TAG normal_space)? // might be also a suffix, currently it cannot parse `<m>pitch<m>!<m>custom_ledger_line`
 normal_space: SPACE
