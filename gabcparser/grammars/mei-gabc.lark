@@ -1,12 +1,12 @@
-start: syllable+ malformed_syllable?
+start: syllable+ malformed_ending?
 syllable: syl_lyric_symbols | syl_musical_symbols
-malformed_syllable: malformed_music
+malformed_ending: malformed_ending_music
 syl_lyric_symbols: SYLLABLE | WS
 
 syl_musical_symbols: separation_bar | custos | syl_musical_symbols_parentheses | PARENTH_OPEN PARENTH_CLOSE | malformed_music_salzinnes
 syl_musical_symbols_parentheses: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* PARENTH_CLOSE
-malformed_music_salzinnes: PARENTH_OPEN note SPACE syl_musical_symbols_parentheses
-malformed_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)? | malformed_custos
+malformed_music_salzinnes: PARENTH_OPEN note SPACE syl_musical_symbols_parentheses // only one sample has this
+malformed_ending_music: PARENTH_OPEN musical_symbol (SPACE musical_symbol)* (SPACE custos)? | malformed_custos
 musical_symbol: clef | note | separation_bar | accidental | malformed_note
 
 clef: clef_symbol clef_number
@@ -18,17 +18,23 @@ malformed_note: CHAR_S note
 
 pitch: "a".."h" NUM
 
-suffix: suffix_s | suffix_se | suffix_l | suffix_n | suffix_c | suffix_a
-suffix_s: CHAR_S // virga - stem on the right side (free standing note)
-suffix_se: CHAR_S CHAR_E // rhombus shape
-suffix_l: CHAR_L // connected with line (for prorrectus)
-suffix_n: CHAR_N // stem on the left side (when is closely followed with descending note)
-suffix_c: CHAR_C // stem from both sides
-suffix_a: CHAR_A // stem (on the right side) pointing upwards
+suffix: stem | porrectus | shape
 
-accidental: f_symbol | n_symbol
-f_symbol: CHAR_F // probably flat
-n_symbol: CHAR_N // probably sharp (or neutral)
+stem: virga_left | virga_right
+virga_right: CHAR_S // virga - stem on the right side (free standing note); tilt=s in MEI
+virga_left: CHAR_N // stem on the left side (when is closely followed with descending note); tilt=n in MEI
+
+porrectus: CHAR_L // connected with line (for prorrectus); ligated=true in MEI
+
+shape: rhombus | liquescent_two_tails_down | liquescent_two_tails_up
+rhombus: CHAR_S CHAR_E // rhombus shape; tilt=se in MEI
+// visual differences only in Einsiedeln
+liquescent_two_tails_down: CHAR_C // stem from both sides pointing downwards; curve=c? in MEI
+liquescent_two_tails_up: CHAR_A // stem from right side or from both sides pointing upward; curve=a? in MEI
+
+accidental: flat | neutral
+flat: CHAR_F
+neutral: CHAR_N
 
 separation_bar: VERT_BAR
 
