@@ -42,7 +42,7 @@ linked_clef: AT MUSIC_TAG clef
 
 note: (prefix MUSIC_TAG)* pitch repetition? (MUSIC_TAG suffix)*
 
-prefix: initio_debilis | remove_stem | zero_width_space
+prefix: initio_debilis | remove_stem
 initio_debilis: MINUS
 remove_stem: AT
 neume_spacing: normal_space | zero_width_space | (EXCLAM_MARK MUSIC_TAG)? SLASH (MUSIC_TAG (SLASH | EXCLAM_MARK | factor_number))?
@@ -76,8 +76,8 @@ liquescent_descending: CHAR_GT
 liquescent_ascending: CHAR_LT
 quadratum: CHAR_Q
 
-accidental: (flat | natural | sharp | soft_flat | soft_natural | soft_sharp) accidental_parenthesized?
-accidental_parenthesized: EXCLAM_MARK
+accidental: (flat | natural | sharp) (MUSIC_TAG accidental_parenthesized)? | soft_flat | soft_natural | soft_sharp
+accidental_parenthesized: QUESTION_MARK
 flat: CHAR_X
 natural: CHAR_Y
 sharp: CHAR_HASH
