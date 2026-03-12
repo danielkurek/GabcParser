@@ -7,11 +7,13 @@ lyric_symbols: OPEN_LYRIC lyric CLOSE_LYRIC
 lyric: V_LYRIC | R_LYRIC | A_LYRIC | OE_LYRIC | AE_LYRIC
 open_text_modifiers: OPEN_BOLD | OPEN_ITALIC | OPEN_COLOR | OPEN_UNDERLINE | OPEN_SMALL_CAPS
 close_text_modifiers: CLOSE_BOLD | CLOSE_ITALIC | CLOSE_COLOR | CLOSE_UNDERLINE | CLOSE_SMALL_CAPS
-syl_musical_symbols: (PARENTH_OPEN unknown_prefix? musical_symbol* unknown_suffix? PARENTH_CLOSE)
+syl_musical_symbols: (PARENTH_OPEN unknown_prefix? musical_symbol* unknown_suffix? PARENTH_CLOSE) | (PARENTH_OPEN NEW_LINE PARENTH_CLOSE) | malformed_music
+malformed_music: PARENTH_OPEN ((pitch | EXCLAM_MARK)* NEW_LINE (pitch | EXCLAM_MARK)*)+ PARENTH_CLOSE | PARENTH_OPEN MUSIC_TAG CHAR_V_ MUSIC_TAG DOT PARENTH_CLOSE
 unknown_prefix: MUSIC_TAG "1"
 unknown_suffix: MUSIC_TAG "!" | MUSIC_TAG neumatic_cut
-musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | unknown_musical_symbol | clef_change)
-unknown_musical_symbol: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T" | "\"" | "”" | "“" | "¡" | stem | WS | "|" | CHAR_PLUS | "»"
+musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | unknown_musical_symbol | clef_change | cont)
+unknown_musical_symbol: WS | "|" | "»"
+cont: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T"
 clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number
 clef_symbol: CHAR_C | CHAR_F
 clef_flat: CHAR_B
@@ -49,7 +51,7 @@ episema_vertical: APOSTROPHE
 episema_horizontal: UNDERSCORE position_horizontal_episema?
 position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
 punctum_mora: DOT
-custos: CHAR_Z (MUSIC_TAG NUM_0)? | CHAR_Z_
+custos: CHAR_Z (MUSIC_TAG NUM_0)? | CHAR_Z_ | square_pitch MUSIC_TAG CHAR_PLUS
 separation_bar: (SLASH MUSIC_TAG)? (bar_small | APOSTROPHE | bar_finallis | bar_maxima | bar_maior | COLON (MUSIC_TAG (QUESTION_MARK | APOSTROPHE))?)
 bar_small: COMMA (MUSIC_TAG (UNDERSCORE | NUM_0))?
 bar_maxima: COLON
@@ -91,7 +93,7 @@ CHAR_TILDE: "~"
 CHAR_HASH: "#"
 CHAR_PLUS: "+"
 DOT: "."
-APOSTROPHE: "'"
+APOSTROPHE: "'" | "\"" | "”" | "“"
 UNDERSCORE: "_"
 MINUS: "-"
 NUM_0: "0"
@@ -102,7 +104,7 @@ NUM_4: "4"
 NUM_5: "5"
 NUM_6: "6"
 QUESTION_MARK: "?"
-EXCLAM_MARK: "!"
+EXCLAM_MARK: "!" | "¡"
 SLASH: "/"
 AT: "@"
 SQ_BRACKET_OPEN: "["
@@ -132,3 +134,4 @@ PORRECTUS: "º" | "°" | "ª"
 COMMA: ","
 SEMICOLON: ";"
 COLON: ":"
+NEW_LINE: "\n"
