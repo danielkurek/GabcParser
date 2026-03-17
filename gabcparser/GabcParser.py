@@ -12,5 +12,3 @@ def load_parser(variation: Literal['gabc', 'mei-gabc', 's-gabc'], **kwargs) -> L
     with grammar_path.open("r", encoding="utf-8") as f:
         parser = Lark(f, **kwargs)
         return parser
-
-load_parser('gabc')
