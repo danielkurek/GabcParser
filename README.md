@@ -28,6 +28,8 @@ The grammars follow a consistent structure at the beginning of the parse tree in
 
 However, there is an exception in `mei-gabc` grammar. Depth 1 may also contain the `malformed_ending` non-terminal (only as the last non-terminal at this level). To maintain the same structure as `syllable` non-terminal, it differentiates between lyrical and musical non-terminals at the depth 2. In this case we have only descendent of `malformed_ending` and that is `malformed_ending_music`. The consistent structure is helpful in post processing because we typically have different processing for lyrical and musical symbols. We can make this differentiation at a fixed depth, i.e at the depth 2.
 
+The following sections describe each of the implemented grammars in details. Checkout [comparison table](comparison_table.md) for brief overview.
+
 ### GABC (with music tags)
 
 GABC format that is used in [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) (from AMNLT paper). It is normal GABC format with one difference, music tag `<m>` is added to every music symbol.
