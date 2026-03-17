@@ -6,7 +6,9 @@ build-backend = "hatchling.build"
 name = "GabcParser"
 version = "2025.0.0"
 dependencies = [
-    "lark"
+    "lark",
+    "datasets",
+    "tqdm"
 ]
 classifiers = [
     "Private :: Do Not Upload"
