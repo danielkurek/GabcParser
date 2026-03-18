@@ -66,14 +66,14 @@ stem: virga_left | virga_right
 virga_left: CHAR_V_
 virga_right: CHAR_V
 
-shape: oriscus | quilisma | strophicus | liquescent | liquescent_descending | liquescent_ascending | quadratum
+shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum
 oriscus: oriscus_scapus | (CHAR_O | CHAR_O_) (MUSIC_TAG (NUM_0 | NUM_1))?
 oriscus_scapus: NUM_0
 quilisma: CHAR_W | CHAR_W_
 strophicus: CHAR_S
 liquescent: CHAR_TILDE
-liquescent_descending: CHAR_GT
-liquescent_ascending: CHAR_LT
+liquescent_two_tails_down: CHAR_GT
+liquescent_two_tails_up: CHAR_LT
 quadratum: CHAR_Q
 
 accidental: (flat | natural | sharp) (MUSIC_TAG accidental_parenthesized)? | soft_flat | soft_natural | soft_sharp
