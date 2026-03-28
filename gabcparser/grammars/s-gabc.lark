@@ -11,7 +11,9 @@ close_text_modifiers: CLOSE_BOLD | CLOSE_ITALIC | CLOSE_COLOR | CLOSE_UNDERLINE 
 
 syl_musical_symbols: (PARENTH_OPEN unknown_prefix? musical_symbol* unknown_suffix? PARENTH_CLOSE) | illegible_reading | (PARENTH_OPEN NEW_LINE PARENTH_CLOSE) | malformed_music
 illegible_reading: PARENTH_OPEN PARENTH_CLOSE
-malformed_music: PARENTH_OPEN ((pitch | EXCLAM_MARK)* NEW_LINE (pitch | EXCLAM_MARK)*)+ PARENTH_CLOSE | PARENTH_OPEN MUSIC_TAG CHAR_V_ MUSIC_TAG DOT PARENTH_CLOSE
+malformed_music: malformed_music_missing_tag | malformed_music_unknown_seq
+malformed_music_missing_tag: PARENTH_OPEN ((pitch | EXCLAM_MARK)* NEW_LINE (pitch | EXCLAM_MARK)*)+ PARENTH_CLOSE
+malformed_music_unknown_seq: PARENTH_OPEN MUSIC_TAG CHAR_V_ MUSIC_TAG DOT PARENTH_CLOSE
 unknown_prefix: MUSIC_TAG "1"
 unknown_suffix: MUSIC_TAG "!" | MUSIC_TAG neumatic_cut
 
