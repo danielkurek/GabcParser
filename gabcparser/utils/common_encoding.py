@@ -158,22 +158,42 @@ class MeiGabcToCommon(Transformer):
         raise RuntimeError("clef_number should have length 1 or 2")
 
     def note(self, children):
-        # convert pitch to rhombus if necessary
+        # convert pitch to rhombus if necessary and remove doubled prefixes
         pitch = None
-        rhombus = None
-        for i,child in enumerate(children):
-            if not isinstance(child, Tree):
+        rhombus = False
+        prev_prefix = None
+        i = 0
+        while i < len(children):
+            if not isinstance(children[i], Tree):
                 continue
-            if child.data == "pitch":
+            if children[i].data == "prefix":
+                prefix = children[i]
+                if prev_prefix is not None:
+                    assert len(prev_prefix.children) == 1 and isinstance(prev_prefix.children[0], Tree) and prev_prefix.children[0].data == "accidental"
+                    assert len(prefix.children) == 1 and isinstance(prefix.children[0], Tree) and prefix.children[0].data == "accidental"
+                    prev_accidental = prev_prefix.children[0]
+                    accidental = prefix.children[0]
+                    assert len(prev_accidental.children) == 1 and len(accidental) == 1
+                    if prev_accidental.children[0].data == accidental.children[0]:
+                        # remove doubled prefix
+                        children.pop(i)
+                        # do not increment i; next element is at i-th position
+                        continue
+                prev_prefix = prefix
+            elif children[i].data == "pitch":
                 assert pitch is None
-                pitch = child
-            if child.data == "suffix":
-                suffix = child
-                for x in suffix.children:
-                    if isinstance(x, Tree) and x.data == "shape" and x.children[0].data == "rhombus":
-                        assert rhombus is None
-                        rhombus = i
-                        break
+                pitch = children[i]
+            elif children[i].data == "suffix":
+                suffix = children[i]
+                assert len(suffix.children) == 2
+                if isinstance(suffix.chilren[1], Tree) \
+                      and suffix.chilren[1].data == "shape" \
+                      and suffix.chilren[1].children[0].data == "rhombus":
+                    # remove rhombus suffix
+                    children.pop(i)
+                    # do not increment i; next element is at i-th position
+                    continue
+            i += 1
         if rhombus is not None:
             children.pop(rhombus)
         if pitch is not None:
