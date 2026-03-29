@@ -13,7 +13,7 @@ syl_musical_symbols: syl_musical_symbols_parentheses | illegible_reading | malfo
 syl_musical_symbols_parentheses: (PARENTH_OPEN unknown_prefix? musical_symbol+ unknown_suffix? PARENTH_CLOSE)
 illegible_reading: PARENTH_OPEN PARENTH_CLOSE
 malformed_music: malformed_music_missing_tag | malformed_music_unknown_seq | malformed_music_new_line
-malformed_music_missing_tag: PARENTH_OPEN ((pitch_no_tag | EXCLAM_MARK)* NEW_LINE (pitch_no_tag | EXCLAM_MARK)*)+ PARENTH_CLOSE
+malformed_music_missing_tag: PARENTH_OPEN ((pitch_no_tag | no_space_no_tag)* NEW_LINE (pitch_no_tag | no_space_no_tag)*)+ PARENTH_CLOSE
 malformed_music_unknown_seq: PARENTH_OPEN MUSIC_TAG CHAR_V_ MUSIC_TAG DOT PARENTH_CLOSE
 malformed_music_new_line: PARENTH_OPEN NEW_LINE PARENTH_CLOSE
 unknown_prefix: MUSIC_TAG "1"
@@ -35,6 +35,7 @@ prefix: no_space | remove_first_stem | neumatic_cut | porrectus | unknown_note_p
 unknown_note_prefix: MUSIC_TAG ("*" | "w" | QUOTE_MARK)
 porrectus: MUSIC_TAG DEGREE
 no_space: MUSIC_TAG EXCLAM_MARK
+no_space_no_tag: EXCLAM_MARK
 remove_first_stem: MUSIC_TAG AT
 neumatic_cut: MUSIC_TAG SLASH (MUSIC_TAG SLASH | factor_number | space_factor)?
 space_factor: MUSIC_TAG SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? factor_number MUSIC_TAG SQ_BRACKET_CLOSE
