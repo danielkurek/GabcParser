@@ -1,3 +1,4 @@
+from typing import override
 from lark import Lark, Token, ParseTree, Transformer, Tree, Discard
 from lark import exceptions as lark_exceptions
 import csv
@@ -24,7 +25,7 @@ class MeiGabcToCommon(Transformer):
     The focus is on resulting string constructed from the non-terminals. 
     The structure of resulting parse tree might differ to the one produced by `common-gabc` grammar.
     """
-    MUSIC_TAG = Token("MUSIC_TAG", "<m>")
+    _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
     
     def __init__(self, debug: bool = False):
         super().__init__()
@@ -35,6 +36,12 @@ class MeiGabcToCommon(Transformer):
     @staticmethod
     def pitch_to_num(pitch) -> int:
         return pitch[1]*7 + ((ord(pitch[0]) - ord('c')) % 7)
+    
+    @override
+    def __default__(self, data, children, meta):
+        if len(children) == 0:
+            return Discard
+        return Tree(data, children, meta)
     
     def syl_musical_symbols(self, children):
         # add parentheses to symbols that do not have them
@@ -141,13 +148,13 @@ class MeiGabcToCommon(Transformer):
     
     def clef_symbol(self, children):
         assert len(children) == 1
-        return Tree("clef_symbol", [self.MUSIC_TAG, *children])
+        return Tree("clef_symbol", [self._MUSIC_TAG, *children])
     
     def clef_number(self, children):
         if len(children) == 1:
-            return Tree("clef_number", [self.MUSIC_TAG, children[0]])
+            return Tree("clef_number", [self._MUSIC_TAG, children[0]])
         elif len(children) == 2:
-            return Tree("clef_number", [self.MUSIC_TAG, children[0], self.MUSIC_TAG, children[1]])
+            return Tree("clef_number", [self._MUSIC_TAG, children[0], self._MUSIC_TAG, children[1]])
         raise RuntimeError("clef_number should have length 1 or 2")
 
     def note(self, children):
@@ -178,7 +185,7 @@ class MeiGabcToCommon(Transformer):
                 Tree(
                     "rhombus_pitch" if rhombus else "square_pitch",
                     [
-                        self.MUSIC_TAG,
+                        self._MUSIC_TAG,
                         Token(pitch.children[0].type, pitch_sym.upper() if rhombus else pitch_sym)
                     ])
             ]
@@ -189,10 +196,10 @@ class MeiGabcToCommon(Transformer):
         return Tree("note", children)
 
     def flat(self, children):
-        return Tree("flat", [self.MUSIC_TAG, Token("CHAR_X", "x")])
+        return Tree("flat", [self._MUSIC_TAG, Token("CHAR_X", "x")])
         
     def neutral(self, children):
-        return Tree("neutral", [self.MUSIC_TAG, Token("CHAR_Y", "y")])
+        return Tree("neutral", [self._MUSIC_TAG, Token("CHAR_Y", "y")])
 
     def malformed_note(self, children):
         # remove typo
@@ -219,16 +226,16 @@ class MeiGabcToCommon(Transformer):
         return Tree("suffix", children)
     
     def virga_right(self, children):
-        return Tree("virga_right", [self.MUSIC_TAG, Token("CHAR_V", "v")])
+        return Tree("virga_right", [self._MUSIC_TAG, Token("CHAR_V", "v")])
     
     def virga_left(self, children):
-        return Tree("virga_left", [self.MUSIC_TAG, Token("CHAR_V_", "V")])
+        return Tree("virga_left", [self._MUSIC_TAG, Token("CHAR_V_", "V")])
     
     def liquescent_two_tails_down(self, children):
-        return Tree("liquescent_two_tails_down", [self.MUSIC_TAG, Token("CHAR_GT", ">")])
+        return Tree("liquescent_two_tails_down", [self._MUSIC_TAG, Token("CHAR_GT", ">")])
 
     def liquescent_two_tails_up(self, children):
-        return Tree("liquescent_two_tails_up", [self.MUSIC_TAG, Token("CHAR_LT", "<")])
+        return Tree("liquescent_two_tails_up", [self._MUSIC_TAG, Token("CHAR_LT", "<")])
     
     def custos(self, children):
         pitch = None
@@ -237,14 +244,14 @@ class MeiGabcToCommon(Transformer):
                 pitch = child
                 break
         assert pitch is not None
-        return Tree("custos", [pitch, self.MUSIC_TAG, Token("CHAR_PLUS", "+")])
+        return Tree("custos", [pitch, self._MUSIC_TAG, Token("CHAR_PLUS", "+")])
     
     def malformed_custos(self, children):
         return self.custos(children)
     
     def separation_bar(self, children):
         return Tree("separation_bar", [
-            Tree("bar_maior", [self.MUSIC_TAG, Token("COLON", ":")])
+            Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
 
