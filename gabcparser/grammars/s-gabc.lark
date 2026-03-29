@@ -13,72 +13,77 @@ syl_musical_symbols: syl_musical_symbols_parentheses | illegible_reading | malfo
 syl_musical_symbols_parentheses: (PARENTH_OPEN unknown_prefix? musical_symbol+ unknown_suffix? PARENTH_CLOSE)
 illegible_reading: PARENTH_OPEN PARENTH_CLOSE
 malformed_music: malformed_music_missing_tag | malformed_music_unknown_seq | malformed_music_new_line
-malformed_music_missing_tag: PARENTH_OPEN ((pitch | EXCLAM_MARK)* NEW_LINE (pitch | EXCLAM_MARK)*)+ PARENTH_CLOSE
+malformed_music_missing_tag: PARENTH_OPEN ((pitch_no_tag | EXCLAM_MARK)* NEW_LINE (pitch_no_tag | EXCLAM_MARK)*)+ PARENTH_CLOSE
 malformed_music_unknown_seq: PARENTH_OPEN MUSIC_TAG CHAR_V_ MUSIC_TAG DOT PARENTH_CLOSE
 malformed_music_new_line: PARENTH_OPEN NEW_LINE PARENTH_CLOSE
 unknown_prefix: MUSIC_TAG "1"
-unknown_suffix: MUSIC_TAG "!" | MUSIC_TAG neumatic_cut
+unknown_suffix: MUSIC_TAG "!" | neumatic_cut
 
-musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | unknown_musical_symbol | clef_change | cont)
-unknown_musical_symbol: WS | "|" | "»" | QUOTE_MARK
-cont: "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T"
+musical_symbol: clef | note | custos | separation_bar | unknown_musical_symbol | clef_change | cont
+unknown_musical_symbol: MUSIC_TAG (WS | "|" | "»" | QUOTE_MARK)
+cont: MUSIC_TAG "C" MUSIC_TAG "O" MUSIC_TAG "N" MUSIC_TAG "T"
 
-clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number
-clef_symbol: CHAR_C | CHAR_F
-clef_flat: CHAR_B
-clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
-clef_change: neumatic_cut MUSIC_TAG clef
+clef: clef_symbol clef_flat? clef_number
+clef_symbol: MUSIC_TAG (CHAR_C | CHAR_F)
+clef_flat: MUSIC_TAG CHAR_B
+clef_number: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
+clef_change: neumatic_cut clef
 
-note: (prefix MUSIC_TAG)* pitch (MUSIC_TAG suffix)* //(MUSIC_TAG attachment)*
+note: prefix* pitch suffix* //(MUSIC_TAG attachment)*
 
 prefix: no_space | remove_first_stem | neumatic_cut | porrectus | unknown_note_prefix
-unknown_note_prefix: "*" | "w" | QUOTE_MARK
-porrectus: DEGREE
-no_space: EXCLAM_MARK
-remove_first_stem: AT
-neumatic_cut: SLASH (MUSIC_TAG (SLASH | factor_number | space_factor))?
-space_factor: SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? MUSIC_TAG factor_number MUSIC_TAG SQ_BRACKET_CLOSE
-factor_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6
+unknown_note_prefix: MUSIC_TAG ("*" | "w" | QUOTE_MARK)
+porrectus: MUSIC_TAG DEGREE
+no_space: MUSIC_TAG EXCLAM_MARK
+remove_first_stem: MUSIC_TAG AT
+neumatic_cut: MUSIC_TAG SLASH (MUSIC_TAG SLASH | factor_number | space_factor)?
+space_factor: MUSIC_TAG SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? factor_number MUSIC_TAG SQ_BRACKET_CLOSE
+factor_number: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6)
 
 pitch: square_pitch | rhombus_pitch | uncertain_reading
-square_pitch: "a".."m"
-rhombus_pitch: CHAR_A2M_
-uncertain_reading: "r" (MUSIC_TAG "1".."7")?
+square_pitch: MUSIC_TAG "a".."m"
+rhombus_pitch: MUSIC_TAG CHAR_A2M_
+uncertain_reading: MUSIC_TAG "r" (MUSIC_TAG "1".."7")?
+
+pitch_no_tag: square_pitch_no_tag | rhombus_pitch_no_tag | uncertain_reading_no_tag
+square_pitch_no_tag: "a".."m"
+rhombus_pitch_no_tag: CHAR_A2M_
+uncertain_reading_no_tag: "r" ("1".."7")?
 
 suffix: stem | shape | accidental | rhythmic_sign
 
 stem: virga_left | virga_right
-virga_left: CHAR_V_
-virga_right: CHAR_V
+virga_left: MUSIC_TAG CHAR_V_
+virga_right: MUSIC_TAG CHAR_V
 
 shape: strophicus | quilisma | oriscus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up
-strophicus: CHAR_S
-quilisma: CHAR_W | CHAR_W_
-oriscus: CHAR_O | CHAR_O_
-liquescent: CHAR_TILDE
-liquescent_two_tails_down: CHAR_GT
-liquescent_two_tails_up: CHAR_LT
+strophicus: MUSIC_TAG CHAR_S
+quilisma: MUSIC_TAG (CHAR_W | CHAR_W_)
+oriscus: MUSIC_TAG (CHAR_O | CHAR_O_)
+liquescent: MUSIC_TAG CHAR_TILDE
+liquescent_two_tails_down: MUSIC_TAG CHAR_GT
+liquescent_two_tails_up: MUSIC_TAG CHAR_LT
 
 accidental: flat | natural | sharp
-flat: CHAR_X
-natural: CHAR_Y
-sharp: CHAR_HASH
+flat: MUSIC_TAG CHAR_X
+natural: MUSIC_TAG CHAR_Y
+sharp: MUSIC_TAG CHAR_HASH
 
 rhythmic_sign: episema_vertical | episema_horizontal | punctum_mora
-episema_vertical: APOSTROPHE
-episema_horizontal: UNDERSCORE (MUSIC_TAG position_horizontal_episema)?
-position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
-punctum_mora: DOT
+episema_vertical: MUSIC_TAG APOSTROPHE
+episema_horizontal: MUSIC_TAG UNDERSCORE (MUSIC_TAG position_horizontal_episema)?
+position_horizontal_episema: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
+punctum_mora: MUSIC_TAG DOT
 
-custos: CHAR_Z (MUSIC_TAG NUM_0)? | CHAR_Z_ | square_pitch MUSIC_TAG CHAR_PLUS
+custos: MUSIC_TAG CHAR_Z (MUSIC_TAG NUM_0)? | MUSIC_TAG CHAR_Z_ | square_pitch MUSIC_TAG CHAR_PLUS
 
-separation_bar: (neumatic_cut MUSIC_TAG)? (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor)
-virgula: BACKTICK (MUSIC_TAG NUM_0)?
-bar_minimis: CARET (MUSIC_TAG NUM_0)?
-bar_small: COMMA (MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
-bar_maior: COLON (MUSIC_TAG QUESTION_MARK)?
-bar_finallis: COLON MUSIC_TAG COLON
-bar_minor: SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+separation_bar: neumatic_cut? (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor)
+virgula: MUSIC_TAG BACKTICK (MUSIC_TAG NUM_0)?
+bar_minimis: MUSIC_TAG CARET (MUSIC_TAG NUM_0)?
+bar_small: MUSIC_TAG COMMA (MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+bar_maior: MUSIC_TAG COLON (MUSIC_TAG QUESTION_MARK)?
+bar_finallis: MUSIC_TAG COLON MUSIC_TAG COLON
+bar_minor: MUSIC_TAG SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
 
 // lexical
 
