@@ -17,6 +17,158 @@ if __name__ == "__main__":
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
+class SGabcToCommon(Transformer):
+    _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
+    """
+    Lark Transformer to convert `s-gabc` parse tree to common encoding.
+
+    The focus is on resulting string constructed from the non-terminals. 
+    The structure of resulting parse tree might differ to the one produced by `common-gabc` grammar.
+    """
+    def __init__(self):
+        super().__init__(visit_tokens=True)
+    
+    @override
+    def __default__(self, data, children, meta):
+        if len(children) == 0:
+            return Discard
+        return Tree(data, children, meta)
+
+    def lyric_symbols(self, children):
+        assert len(children) == 3
+        assert isinstance(children[1], Tree) and children[1].data == "lyric"
+        # `lyric` is already converted to `SYLLABLE`
+        assert len(children[1].children) == 1 \
+            and isinstance(children[1].children, Token) \
+            and children[1].children[0].type == "SYLLABLE"
+        return children[1].children[0]
+    
+    def open_text_modifiers(self, children):
+        return Discard
+    
+    def close_text_modifiers(self, children):
+        return Discard
+    
+    def unknown_prefix(self, children):
+        return Discard
+    
+    def unknown_suffix(self, children):
+        return Discard
+    
+    def illegible_reading(self, children):
+        return Discard # TODO: check
+    
+    def malformed_music(self, children):
+        if len(children) == 0:
+            return Discard
+        assert len(children) == 1 and isinstance(children[0], Tree)
+        return Tree("syl_musical_symbols_parentheses", children[0].children)
+    
+    def malformed_music_missing_tag(self, children):
+        # remove new line and remove multiple instances of `zero_width_space` in succession
+        assert isinstance(children[0], Token) and children[0].type == "PARENTH_OPEN"
+        i = 1 # we do not need to check first children
+        while i < len(children):
+            if isinstance(children[i], Token):
+                if children[i].type == "NEW_LINE":
+                    children.pop(i)
+                    # do not increment i; next element is at i-th position
+                    continue
+            if not isinstance(children[i], Tree):
+                i += 1
+                continue
+            # skipped first item -> the indexing cannot underflow
+            if children[i].data == "zero_width_space" \
+                 and isinstance(children[i-1], Tree) and children[i-1].data == "zero_width_space":
+                children.pop(i)
+                # do not increment i; next element is at i-th position
+                continue
+            i += 1
+        return Tree("malformed_music_missing_tag", children)
+    
+    def no_space_no_tag(self, children):
+        return Tree("zero_width_space", [self._MUSIC_TAG, Token("EXCLAM_MARK", "!")])
+    
+    def pitch_no_tag(self, children):
+        return Tree("pitch", children)
+    
+    def square_pitch_no_tag(self, children):
+        return Tree("square_pitch", [self._MUSIC_TAG, *children])
+
+    def rhombus_pitch_no_tag(self, children):
+        return Tree("rhombus_pitch", [self._MUSIC_TAG, *children])
+
+    def uncertain_reading_no_tag(self, children):
+        return Discard
+
+    def malformed_music_unknown_seq(self, children):
+        return Discard
+    
+    def malformed_music_new_line(self, children):
+        return Discard
+    
+    def unknown_musical_symbol(self, children):
+        return Discard
+    
+    def cont(self, children):
+        return Discard # TODO check
+    
+    def note(self, children):
+        # keep only one `zero_width_space`, delete the rest
+        i = 0
+        found_zero_width_space = False
+        while i < len(children):
+            if not isinstance(children[i], Tree):
+                i += 1
+                continue
+            if children[i].data != "prefix":
+                break
+            prefix = children[i]
+            assert len(prefix.children) == 1
+            if isinstance(prefix.children[0], Tree) and prefix.children[0].data == "zero_width_space":
+                if found_zero_width_space:
+                    children.pop(i)
+                    # do not increment i; next element is at i-th position
+                    continue
+                found_zero_width_space = True
+            i += 1
+        return Tree("note", children)
+    
+    def unknown_note_prefix(self, children):
+        return Discard
+    
+    def neumatic_cut(self, children):
+        return Tree("zero_width_space", [self._MUSIC_TAG, Token("EXCLAM_MARK", "!")])
+    
+    def no_space(self, children):
+        return Tree("zero_width_space", children)
+    
+    def uncertain_reading(self, children):
+        return Discard
+    
+    def EXCLAM_MARK(self, token):
+        return Token("EXCLAM_MARK", "!")
+    
+    def QUOTE_MARK(self, token):
+        return Token("QUOTE_MARK", "\"")
+    
+    def DEGREE(self, token):
+        return Token("DEGREE", "°")
+    
+    def V_LYRIC(self, token):
+        return Token("SYLLABLE", "Ꝟ")
+
+    def R_LYRIC(self, token):
+        return Token("SYLLABLE", "Ꞧ")
+
+    def A_LYRIC(self, token):
+        return Token("SYLLABLE", "Ⱥ")
+
+    def OE_LYRIC(self, token):
+        return Token("SYLLABLE", "œ")
+
+    def AE_LYRIC(self, token):
+        return Token("SYLLABLE", "æ")
 
 class MeiGabcToCommon(Transformer):
     """
@@ -280,11 +432,17 @@ def main(args: argparse.Namespace):
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    convertor = MeiGabcToCommon()
+    convertor = None
+    match args.grammar:
+        case grammars.S_GABC:
+            convertor = SGabcToCommon()
+        case grammars.MEI_GABC:
+            convertor = MeiGabcToCommon()
     for split in dataset.keys():
         parsed = gabc_parser.parse(dataset[split][args.transcript_column][5])
         transformed = convertor.transform(parsed)
         tokens = transformed.scan_values(lambda v: isinstance(v, Token))
+        print(split)
         print("".join(token.value for token in tokens))
 
 
