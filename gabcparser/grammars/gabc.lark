@@ -32,66 +32,67 @@ syllable_centering: CURLY_BRACKET_OPEN  SYLLABLE* CURLY_BRACKET_CLOSE
 
 syl_musical_symbols: PARENTH_OPEN musical_symbol* PARENTH_CLOSE
 
-musical_symbol: MUSIC_TAG (clef | note | custos | separation_bar | neume_spacing | line_break | no_custos)
+musical_symbol: clef | note | separation_bar | neume_spacing | custos | no_custos
 
-clef: clef_symbol (MUSIC_TAG clef_flat)? MUSIC_TAG clef_number (MUSIC_TAG linked_clef)?
-clef_symbol: CHAR_C | CHAR_F
-clef_flat: CHAR_B
-clef_number: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
-linked_clef: AT MUSIC_TAG clef
+clef: clef_symbol clef_flat? clef_number linked_clef?
+clef_symbol: MUSIC_TAG (CHAR_C | CHAR_F)
+clef_flat: MUSIC_TAG CHAR_B
+clef_number: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
+linked_clef: MUSIC_TAG AT clef
 
-note: (prefix MUSIC_TAG)* pitch repetition? (MUSIC_TAG suffix)*
+note: prefix* pitch repetition? suffix*
 
 prefix: initio_debilis | remove_stem
-initio_debilis: MINUS
-remove_stem: AT
-neume_spacing: normal_space | zero_width_space | SLASH (MUSIC_TAG (SLASH | EXCLAM_MARK | factor_number))?
-factor_number: NUM_0 | SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? (MUSIC_TAG NUM)+ (MUSIC_TAG DOT (MUSIC_TAG NUM)+)? MUSIC_TAG SQ_BRACKET_CLOSE
-zero_width_space: EXCLAM_MARK (MUSIC_TAG normal_space)? // might be also a suffix, currently it cannot parse `<m>pitch<m>!<m>custom_ledger_line`
-normal_space: SPACE
+initio_debilis: MUSIC_TAG MINUS
+remove_stem: MUSIC_TAG AT
+neume_spacing: normal_space | zero_width_space | slash_spacing
+slash_spacing: MUSIC_TAG SLASH (MUSIC_TAG SLASH | MUSIC_TAG EXCLAM_MARK | factor_number)?
+factor_number: MUSIC_TAG NUM_0 | MUSIC_TAG SQ_BRACKET_OPEN (MUSIC_TAG MINUS)? (MUSIC_TAG NUM)+ (MUSIC_TAG DOT (MUSIC_TAG NUM)+)? MUSIC_TAG SQ_BRACKET_CLOSE
+zero_width_space: MUSIC_TAG EXCLAM_MARK (MUSIC_TAG normal_space)? // might be also a suffix, currently it cannot parse `<m>pitch<m>!<m>custom_ledger_line`
+normal_space: MUSIC_TAG SPACE
 
 pitch: square_pitch | rhombus_pitch
-square_pitch: "a".."m"
-rhombus_pitch: CHAR_A2M_ (MUSIC_TAG rhombus_pitch_shape)?
-rhombus_pitch_shape: NUM_0 | NUM_1 | NUM_2
+square_pitch: MUSIC_TAG "a".."m"
+rhombus_pitch: MUSIC_TAG CHAR_A2M_ rhombus_pitch_shape?
+rhombus_pitch_shape: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2)
 
 repetition: di_tristropha | bi_trivirga
 di_tristropha: MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S (MUSIC_TAG CHAR_S)?
 bi_trivirga: MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V (MUSIC_TAG CHAR_V)?
 
 
-suffix: stem | shape | accidental | rhythmic_sign | empty_note | note_accents | pitch_custos | custom_ledger_line
+suffix: stem | shape | accidental | rhythmic_sign | empty_note | note_accents | custom_ledger_line
 
 stem: virga_left | virga_right
-virga_left: CHAR_V_
-virga_right: CHAR_V
+virga_left: MUSIC_TAG CHAR_V_
+virga_right: MUSIC_TAG CHAR_V
 
 shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum
-oriscus: oriscus_scapus | (CHAR_O | CHAR_O_) (MUSIC_TAG (NUM_0 | NUM_1))?
-oriscus_scapus: NUM_0
-quilisma: CHAR_W | CHAR_W_
-strophicus: CHAR_S
-liquescent: CHAR_TILDE
-liquescent_two_tails_down: CHAR_GT
-liquescent_two_tails_up: CHAR_LT
-quadratum: CHAR_Q
+oriscus: oriscus_scapus | MUSIC_TAG (CHAR_O | CHAR_O_) (MUSIC_TAG (NUM_0 | NUM_1))?
+oriscus_scapus: MUSIC_TAG NUM_0
+quilisma: MUSIC_TAG (CHAR_W | CHAR_W_)
+strophicus: MUSIC_TAG CHAR_S
+liquescent: MUSIC_TAG CHAR_TILDE
+liquescent_two_tails_down: MUSIC_TAG CHAR_GT
+liquescent_two_tails_up: MUSIC_TAG CHAR_LT
+quadratum: MUSIC_TAG CHAR_Q
 
-accidental: (flat | natural | sharp) (MUSIC_TAG accidental_parenthesized)? | soft_flat | soft_natural | soft_sharp
-accidental_parenthesized: QUESTION_MARK
-flat: CHAR_X
-natural: CHAR_Y
-sharp: CHAR_HASH
-soft_flat: CHAR_X_
-soft_natural: CHAR_Y_
-soft_sharp: CHAR_HASH MUSIC_TAG CHAR_HASH
+accidental: (flat | natural | sharp) accidental_parenthesized? | soft_flat | soft_natural | soft_sharp
+accidental_parenthesized: MUSIC_TAG QUESTION_MARK
+flat: MUSIC_TAG CHAR_X
+natural: MUSIC_TAG CHAR_Y
+sharp: MUSIC_TAG CHAR_HASH
+soft_flat: MUSIC_TAG CHAR_X_
+soft_natural: MUSIC_TAG CHAR_Y_
+soft_sharp: MUSIC_TAG CHAR_HASH MUSIC_TAG CHAR_HASH
 
 rhythmic_sign: punctum_mora | episema_vertical | episema_horizontal
-punctum_mora: DOT (MUSIC_TAG (NUM_0 | NUM_1))? // position arguments 0/1 not supported in Gregorio
-episema_vertical: APOSTROPHE (MUSIC_TAG position_vertical_episema)?
-position_vertical_episema: NUM_0 | NUM_1
-episema_horizontal: UNDERSCORE (MUSIC_TAG (position_horizontal_episema | position_tuning_episema))*
-position_horizontal_episema: NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5
-position_tuning_episema: SQ_BRACKET_OPEN episema_tuning_dimension? (MUSIC_TAG COLON episema_tuning_position)? episema_tuning_block? MUSIC_TAG SQ_BRACKET_CLOSE
+punctum_mora: MUSIC_TAG DOT (MUSIC_TAG (NUM_0 | NUM_1))? // position arguments 0/1 not supported in Gregorio
+episema_vertical: MUSIC_TAG APOSTROPHE position_vertical_episema?
+position_vertical_episema: MUSIC_TAG NUM_0 | NUM_1
+episema_horizontal: MUSIC_TAG UNDERSCORE (position_horizontal_episema | position_tuning_episema)*
+position_horizontal_episema: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
+position_tuning_episema: MUSIC_TAG SQ_BRACKET_OPEN episema_tuning_dimension? (MUSIC_TAG COLON episema_tuning_position)? episema_tuning_block? MUSIC_TAG SQ_BRACKET_CLOSE
 episema_tuning_dimension: ((MUSIC_TAG (CHAR_O | CHAR_U))? MUSIC_TAG (CHAR_L | CHAR_H)) | "m"
 episema_tuning_position: MUSIC_TAG "a".."m" (episema_tuning_position_num)?
 episema_tuning_position_num: MUSIC_TAG ("+" | "-") (MUSIC_NUMBER+ (MUSIC_TAG DOT MUSIC_NUMBER+)? MUSIC_MM_UNIT)?
@@ -99,12 +100,10 @@ episema_tuning_block: MUSIC_TAG ("{" | "}")
 MUSIC_NUMBER: MUSIC_TAG NUM
 MUSIC_MM_UNIT: MUSIC_TAG CHAR_M MUSIC_TAG CHAR_M
 
-empty_note: CHAR_R (MUSIC_TAG NUM_0)?
+empty_note: MUSIC_TAG CHAR_R (MUSIC_TAG NUM_0)?
 
-note_accents: CHAR_R_ | CHAR_R MUSIC_TAG note_accent_type
-note_accent_type: NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8
-
-pitch_custos: CHAR_PLUS
+note_accents: MUSIC_TAG CHAR_R_ | MUSIC_TAG CHAR_R note_accent_type
+note_accent_type: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8)
 
 custom_ledger_line: SQ_BRACKET_OPEN MUSIC_TAG ledger_type MUSIC_TAG COLON MUSIC_TAG (ledger_group_start | ledger_end_group | ledger_one_time) MUSIC_TAG SQ_BRACKET_CLOSE
 ledger_type: (CHAR_O | CHAR_U) MUSIC_TAG CHAR_L MUSIC_TAG CHAR_L
@@ -112,21 +111,24 @@ ledger_one_time: NUM (MUSIC_TAG SEMICOLON MUSIC_TAG NUM)?
 ledger_group_start: NUM MUSIC_TAG CURLY_BRACKET_OPEN MUSIC_TAG NUM
 ledger_end_group: CURLY_BRACKET_CLOSE
 
-custos: CHAR_Z MUSIC_TAG NUM_0 // should be probably a prefix according to Gregorio but the data uses it differently
-no_custos: MUSIC_TAG SQ_BRACKET_OPEN MUSIC_TAG "n" MUSIC_TAG "o" MUSIC_TAG "c" MUSIC_TAG "u" MUSIC_TAG "s" MUSIC_TAG "t" MUSIC_TAG "o" MUSIC_TAG "s" SQ_BRACKET_CLOSE
+custos: implicit_custos | pitch_custos
+line_break_implicit_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG (CHAR_PLUS | MINUS))?
+implicit_custos: MUSIC_TAG CHAR_Z MUSIC_TAG NUM_0 // should be probably a prefix according to Gregorio
+pitch_custos: pitch MUSIC_TAG CHAR_PLUS
+no_custos: no_custos_tag | line_break_no_custos
+line_break_no_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG MINUS)?
+no_custos_tag: MUSIC_TAG SQ_BRACKET_OPEN MUSIC_TAG "n" MUSIC_TAG "o" MUSIC_TAG "c" MUSIC_TAG "u" MUSIC_TAG "s" MUSIC_TAG "t" MUSIC_TAG "o" MUSIC_TAG "s" SQ_BRACKET_CLOSE
 
-separation_bar: (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor) (MUSIC_TAG separation_bar_suffix)*
-virgula: BACKTICK (MUSIC_TAG NUM_0)?
-bar_minimis: CARET (MUSIC_TAG NUM_0)?
-bar_small: COMMA (MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
-bar_maior: COLON (MUSIC_TAG QUESTION_MARK)?
-bar_finallis: COLON MUSIC_TAG COLON
-bar_minor: SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+separation_bar: (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor) separation_bar_suffix*
+virgula: MUSIC_TAG BACKTICK (MUSIC_TAG NUM_0)?
+bar_minimis: MUSIC_TAG CARET (MUSIC_TAG NUM_0)?
+bar_small: MUSIC_TAG COMMA (MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
+bar_maior: MUSIC_TAG COLON (MUSIC_TAG QUESTION_MARK)?
+bar_finallis: MUSIC_TAG COLON MUSIC_TAG COLON
+bar_minor: MUSIC_TAG SEMICOLON (MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6))?
 separation_bar_suffix: vertical_episema_modifier | bar_brace
-vertical_episema_modifier: APOSTROPHE
-bar_brace: UNDERSCORE
-
-line_break: (CHAR_Z | CHAR_Z_) (MUSIC_TAG (CHAR_PLUS | MINUS))?
+vertical_episema_modifier: MUSIC_TAG APOSTROPHE
+bar_brace: MUSIC_TAG UNDERSCORE
 
 // lexical
 
