@@ -36,7 +36,7 @@ virga_right: MUSIC_TAG CHAR_V
 shape: strophicus | quilisma | oriscus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up
 strophicus: MUSIC_TAG CHAR_S
 quilisma: MUSIC_TAG (CHAR_W | CHAR_W_)
-oriscus: MUSIC_TAG (CHAR_O | CHAR_O_)
+oriscus: MUSIC_TAG CHAR_O
 liquescent: MUSIC_TAG CHAR_TILDE
 liquescent_two_tails_down: MUSIC_TAG CHAR_GT
 liquescent_two_tails_up: MUSIC_TAG CHAR_LT

@@ -146,6 +146,9 @@ class SGabcToCommon(Transformer):
     def uncertain_reading(self, children):
         return Discard
     
+    def oriscus(self, children):
+        return Tree("oriscus", [self._MUSIC_TAG, Token("CHAR_O", "o")])
+    
     def EXCLAM_MARK(self, token):
         return Token("EXCLAM_MARK", "!")
     
