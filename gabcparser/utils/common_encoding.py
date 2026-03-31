@@ -17,6 +17,280 @@ if __name__ == "__main__":
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
+class GabcToCommon(Transformer):
+    _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
+
+    @override
+    def __default__(self, data, children, meta):
+        if len(children) == 0:
+            return Discard
+        return Tree(data, children, meta)
+
+    # def syl_lyric_symbols(self, children):
+    #     # TODO: change modified lyrics to this rule
+    #     pass
+
+    def special_lyric(self, children):
+        text = "".join([x.value for x in children if isinstance(x, Token) and x.type == "SYLLABLE"])
+        new_text = None
+        # TODO: maybe add more cases
+        match text:
+            case "ae":
+                new_text = "æ"
+            case "oe":
+                new_text = "œ"
+            case "A/":
+                new_text = "Ⱥ"
+            case "R/":
+                new_text = "Ꞧ"
+            case "V/":
+                new_text = "Ꝟ"
+            case "'ae":
+                new_text = "æ'"
+            case "'oe":
+                new_text = "œ'"
+            case _:
+                new_text = text
+        return Tree("syl_lyric_symbols", [Token("SYLLABLE", new_text)])
+
+    def bold_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def italic_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def color_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def underline_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def small_caps_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def teletype_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def nlba_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def elision_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def above_line_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def euouae_text(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+
+    def tex_text(self, children):
+        # no TeX command are allowed
+        return Discard
+
+    def syllable_centering(self, children):
+        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Token) and x.type == "SYLLABLE"])
+    
+    def syl_musical_symbols(self, children):
+        assert isinstance(children[0], Token) and children[0].type == "PARENTH_OPEN"
+        assert isinstance(children[-1], Token) and children[-1].type == "PARENTH_CLOSE"
+        # remove multiple zero_width_space in succession - keep only one
+        # unwrap notes if needed
+        # TODO: detect porrectus
+        if len(children) == 2:
+            # remove empty parentheses
+            return Discard
+        note_history = []
+        i = 1
+        while i < len(children)-1:
+            if not isinstance(children[i], Tree):
+                # this should not happen
+                i += 1
+                note_history = []
+                continue
+            assert children[i].data == "musical_symbol"
+            musical_symbol = children[i]
+            assert len(musical_symbol.children) == 1 and isinstance(musical_symbol.children[0], Tree)
+            if musical_symbol.children[0].data == "zero_width_space" \
+                 and isinstance(children[i-1], Tree) and children[i-1].children[0].data =="zero_width_space":
+                children.pop(i)
+                note_history = []
+                # do not increment i; next element is at i-th position
+                continue
+            if musical_symbol.children[0].data == "note_unwrap":
+                note_unwrap = musical_symbol.children[0]
+                # remove this symbol and insert its children
+                children.pop(i)
+                for offset,child in enumerate(note_unwrap.children):
+                    children.insert(i+offset, Tree("musical_symbol", [child]))
+                i += len(note_unwrap.children) # any of the notes in note_unwrap cannot be part of porrectus nor is it zero-width space
+                note_history = []
+                continue
+            # if musical_symbol.children[0].data == "note":
+            #     # TODO: detect porrectus
+            #     note = musical_symbol.children[0]
+            #     pitch = None
+            #     for child in note.children:
+            #         if isinstance(child, Tree) and child.data == "pitch":
+            #             assert len(child.children) == 1 and isinstance(child.children[0], Tree)
+            #             pitch_child = child.children[0]
+            #             assert len(pitch_child.children) >= 2 and isinstance(pitch_child.children[1], Token)
+            #             pitch = pitch_child.children[1].value
+            #             break
+            #     if pitch is None:
+            #         raise ValueError("Note does not contain any pitch - critical error")
+            #     pitch = pitch.lower()
+            #     if len(pitch) != 1 or ord(pitch) < ord('a') or ord(pitch) > ord('m'):
+            #         raise ValueError("Unexpected pitch value")
+            #     pitch_num = ord(pitch) - ord('a')
+            #     note_history.append((note, pitch_num))
+            #     if len(note_history) == 3:
+            #         first_pitch = note_history[0][1]
+            #         if note_history[1][1] - first_pitch == -1 and note_history[2][1] - first_pitch == 0:
+            #             # porrectus
+            #             # TODO: more types of porrectus?
+            #             pass
+            #         pass
+            #     elif len(note_history) > 3:
+            #         raise RuntimeError("Unexpected note_history length")
+            i += 1
+        if len(children) == 0:
+            return Discard
+        return Tree("syl_musical_symbols", children)
+
+    def linked_clef(self, children):
+        assert len(children) == 3 and isinstance(children[2], Tree) and children[2].data == "clef"
+        return Tree("clef", children[2].children)
+    
+    def note(self, children):
+        # convert repetitions to several notes
+        repetition_index = None
+        pitch = None
+        for i in range(len(children)):
+            if not isinstance(children[i], Tree):
+                continue
+            if children[i].data == "pitch":
+                pitch = children[i]
+            if children[i].data == "repetition":
+                repetition_index = i
+                break
+        if repetition_index is None:
+            return Tree("note", children)
+        
+        repetition = children.pop(repetition_index)
+        assert len(repetition.children) == 1 and isinstance(repetition.children[0], Tree)
+        assert pitch is not None
+        repetition = repetition.children[0]
+        repetition_num = 1
+
+        if repetition.data.startswith("di") or repetition.data.startswith("bi"):
+            repetition_num = 2
+        elif repetition.data.startswith("tri"):
+            repetition_num = 3
+        else:
+            ValueError(f"Unknown repetition type `{repetition.data}`")
+        
+        notes = []
+        prefixes = [x for x in children if isinstance(x, Tree) and x.data == "prefix"]
+        pitch_token = pitch.children[0].children[1]
+        assert isinstance(pitch_token, Token)
+        if repetition.data.endswith("stropha"):
+            new_pitch = Tree("pitch", [Tree("rhombus_pitch", [self._MUSIC_TAG, Token("CHAR_A2M_", pitch_token.value.upper())])])
+            suffix = Tree("shape", [Tree("liquescent_two_tails_down", [self._MUSIC_TAG, Token("CHAR_GT", ">")])])
+            notes.append(Tree("note", prefixes + [new_pitch, suffix]))
+            for _ in range(1, repetition_num):
+                notes.append(Tree("note",  [new_pitch, suffix]))
+        elif repetition.data.endswith("virga"):
+            new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
+            notes.append(Tree("note", prefixes + [new_pitch]))
+            for _ in range(1, repetition_num):
+                notes.append(Tree("note",  [new_pitch]))
+        else:
+            raise ValueError(f"Unknown repetition type `{repetition.data}`")
+        # unwrapping is done in `syl_musical_symbols`
+        return Tree("note_unwrap", notes)
+
+    def di_tristropha(self, children):
+        assert len(children) >= 4
+        count = sum(1 for x in children if isinstance(x, Token) and x.type != "MUSIC_TAG")
+        name_prefix = ""
+        if count == 2:
+            name_prefix = "di"
+        elif count == 3:
+            name_prefix = "tri"
+        else:
+            ValueError("Expecting 2 or 3 non music tag tokens")
+        return Tree(f"{name_prefix}stropha", children)
+
+    def bi_trivirga(self, children):
+        assert len(children) >= 4
+        count = sum(1 for x in children if isinstance(x, Token) and x.type != "MUSIC_TAG")
+        name_prefix = ""
+        if count == 2:
+            name_prefix = "bi"
+        elif count == 3:
+            name_prefix = "tri"
+        else:
+            ValueError("Expecting 2 or 3 non music tag tokens")
+        return Tree(f"{name_prefix}virga", children)
+
+    def initio_debilis(self, children):
+        return Discard
+    
+    def neume_spacing(self, children):
+        return Tree("zero_width_space", [self._MUSIC_TAG, Token("EXCLAM_MARK", "!")])
+    
+    def rhombus_pitch_shape(self, children):
+        return Discard
+    
+    def oriscus(self, children):
+        return Tree("oriscus", [self._MUSIC_TAG, Token("CHAR_O", "o")])
+    
+    def quadratum(self, children):
+        return Discard
+
+    def empty_note(self, children):
+        return Tree("empty_note", [self._MUSIC_TAG, Token("CHAR_R", "r")])
+
+    def accidental_parenthesized(self, children):
+        return Discard
+    
+    def soft_flat(self, children):
+        return Tree("flat", [self._MUSIC_TAG, Token("CHAR_X", "x")])
+
+    def soft_neutral(self, children):
+        return Tree("neutral", [self._MUSIC_TAG, Token("CHAR_Y", "y")])
+
+    def soft_sharp(self, children):
+        return Tree("sharp", [self._MUSIC_TAG, Token("CHAR_HASH", "#")])
+    
+    def punctum_mora_position(self, children):
+        return Discard
+    
+    def position_vertical_episema(self, children):
+        return Discard
+    
+    # def position_horizontal_episema(self, children):
+    #     return Discard
+    
+    def position_tuning_episema(self, children):
+        return Discard
+    
+    def note_accent(self, children):
+        # it is rendered as empty note in available data
+        return Tree("empty_note", [self._MUSIC_TAG, Token("CHAR_R", "r")])
+    
+    def custom_ledger_line(self, children):
+        return Discard
+    
+    def line_break_implicit_custos(self, children):
+        return Tree("implicit_custos", [self._MUSIC_TAG, Token("CHAR_Z_", "Z")])
+    
+    def no_custos(self, children):
+        return Discard
+    
+    def separation_bar_suffix(self, children):
+        return Discard
+
 class SGabcToCommon(Transformer):
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
     """
