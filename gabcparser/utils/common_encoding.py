@@ -7,6 +7,7 @@ from pathlib import Path
 from .. import grammars
 from .. import GabcParser
 from datasets import load_dataset
+from functools import partial
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
