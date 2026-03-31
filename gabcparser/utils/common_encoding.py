@@ -39,7 +39,7 @@ class SGabcToCommon(Transformer):
         assert isinstance(children[1], Tree) and children[1].data == "lyric"
         # `lyric` is already converted to `SYLLABLE`
         assert len(children[1].children) == 1 \
-            and isinstance(children[1].children, Token) \
+            and isinstance(children[1].children[0], Token) \
             and children[1].children[0].type == "SYLLABLE"
         return children[1].children[0]
     
