@@ -68,8 +68,9 @@ virga_left: MUSIC_TAG CHAR_V_
 virga_right: MUSIC_TAG CHAR_V
 
 shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum
-oriscus: oriscus_scapus | MUSIC_TAG (CHAR_O | CHAR_O_) (MUSIC_TAG (NUM_0 | NUM_1))?
-oriscus_scapus: MUSIC_TAG NUM_0
+oriscus: oriscus_scapus | oriscus_normal
+oriscus_normal: MUSIC_TAG CHAR_O (MUSIC_TAG (NUM_0 | NUM_1))?
+oriscus_scapus: MUSIC_TAG CHAR_O_ (MUSIC_TAG (NUM_0 | NUM_1))?
 quilisma: MUSIC_TAG (CHAR_W | CHAR_W_)
 strophicus: MUSIC_TAG CHAR_S
 liquescent: MUSIC_TAG CHAR_TILDE
@@ -87,9 +88,10 @@ soft_natural: MUSIC_TAG CHAR_Y_
 soft_sharp: MUSIC_TAG CHAR_HASH MUSIC_TAG CHAR_HASH
 
 rhythmic_sign: punctum_mora | episema_vertical | episema_horizontal
-punctum_mora: MUSIC_TAG DOT (MUSIC_TAG (NUM_0 | NUM_1))? // position arguments 0/1 not supported in Gregorio
+punctum_mora: MUSIC_TAG DOT punctum_mora_position? 
+punctum_mora_position: MUSIC_TAG (NUM_0 | NUM_1) // not supported in Gregorio
 episema_vertical: MUSIC_TAG APOSTROPHE position_vertical_episema?
-position_vertical_episema: MUSIC_TAG NUM_0 | NUM_1
+position_vertical_episema: MUSIC_TAG (NUM_0 | NUM_1)
 episema_horizontal: MUSIC_TAG UNDERSCORE (position_horizontal_episema | position_tuning_episema)*
 position_horizontal_episema: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
 position_tuning_episema: MUSIC_TAG SQ_BRACKET_OPEN episema_tuning_dimension? (MUSIC_TAG COLON episema_tuning_position)? episema_tuning_block? MUSIC_TAG SQ_BRACKET_CLOSE
@@ -105,19 +107,19 @@ empty_note: MUSIC_TAG CHAR_R (MUSIC_TAG NUM_0)?
 note_accents: MUSIC_TAG CHAR_R_ | MUSIC_TAG CHAR_R note_accent_type
 note_accent_type: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8)
 
-custom_ledger_line: SQ_BRACKET_OPEN MUSIC_TAG ledger_type MUSIC_TAG COLON MUSIC_TAG (ledger_group_start | ledger_end_group | ledger_one_time) MUSIC_TAG SQ_BRACKET_CLOSE
-ledger_type: (CHAR_O | CHAR_U) MUSIC_TAG CHAR_L MUSIC_TAG CHAR_L
-ledger_one_time: NUM (MUSIC_TAG SEMICOLON MUSIC_TAG NUM)?
-ledger_group_start: NUM MUSIC_TAG CURLY_BRACKET_OPEN MUSIC_TAG NUM
-ledger_end_group: CURLY_BRACKET_CLOSE
+custom_ledger_line: MUSIC_TAG SQ_BRACKET_OPEN ledger_type MUSIC_TAG COLON (ledger_group_start | ledger_end_group | ledger_one_time) MUSIC_TAG SQ_BRACKET_CLOSE
+ledger_type: MUSIC_TAG (CHAR_O | CHAR_U) MUSIC_TAG CHAR_L MUSIC_TAG CHAR_L
+ledger_one_time: MUSIC_TAG NUM (MUSIC_TAG SEMICOLON MUSIC_TAG NUM)?
+ledger_group_start: MUSIC_TAG NUM MUSIC_TAG CURLY_BRACKET_OPEN MUSIC_TAG NUM
+ledger_end_group: MUSIC_TAG CURLY_BRACKET_CLOSE
 
-custos: implicit_custos | pitch_custos
+custos: implicit_custos | line_break_implicit_custos | pitch_custos
 line_break_implicit_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG (CHAR_PLUS | MINUS))?
 implicit_custos: MUSIC_TAG CHAR_Z MUSIC_TAG NUM_0 // should be probably a prefix according to Gregorio
 pitch_custos: pitch MUSIC_TAG CHAR_PLUS
 no_custos: no_custos_tag | line_break_no_custos
 line_break_no_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG MINUS)?
-no_custos_tag: MUSIC_TAG SQ_BRACKET_OPEN MUSIC_TAG "n" MUSIC_TAG "o" MUSIC_TAG "c" MUSIC_TAG "u" MUSIC_TAG "s" MUSIC_TAG "t" MUSIC_TAG "o" MUSIC_TAG "s" SQ_BRACKET_CLOSE
+no_custos_tag: MUSIC_TAG SQ_BRACKET_OPEN MUSIC_TAG "n" MUSIC_TAG "o" MUSIC_TAG "c" MUSIC_TAG "u" MUSIC_TAG "s" MUSIC_TAG "t" MUSIC_TAG "o" MUSIC_TAG "s" MUSIC_TAG SQ_BRACKET_CLOSE
 
 separation_bar: (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor) separation_bar_suffix*
 virgula: MUSIC_TAG BACKTICK (MUSIC_TAG NUM_0)?
