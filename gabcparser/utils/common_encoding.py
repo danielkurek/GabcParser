@@ -709,26 +709,47 @@ class MeiGabcToCommon(Transformer):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
+def process_batch(batch, grammar, transcript_column):
+    parser = GabcParser.load_parser(args.grammar)
+    transformer = None
+    match args.grammar:
+        case grammars.GABC:
+            transformer = GabcToCommon()
+        case grammars.S_GABC:
+            transformer = SGabcToCommon()
+        case grammars.MEI_GABC:
+            transformer = MeiGabcToCommon()
+    transformed_col = f"{transcript_column}_common"
+    batch[transformed_col] = [None] * len(batch[transcript_column])
+    for i in range(len(batch[transcript_column])):
+        text = batch[transcript_column][i]
+        try:
+            parsed = parser.parse(text)
+            transformed = transformer.transform(parsed)
+            tokens = transformed.scan_values(lambda v: isinstance(v, Token))
+            batch[transformed_col][i] = "".join(token.value for token in tokens)
+        except lark_exceptions.UnexpectedCharacters:
+            pass
+        except lark_exceptions.VisitError as err:
+            print(f"{err.rule=} {err.orig_exc=}")
+    return batch
 
 def main(args: argparse.Namespace):
     gabc_parser = GabcParser.load_parser(args.grammar)
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    convertor = None
+    transformer = None
     match args.grammar:
+        case grammars.GABC:
+            transformer = GabcToCommon()
         case grammars.S_GABC:
-            convertor = SGabcToCommon()
+            transformer = SGabcToCommon()
         case grammars.MEI_GABC:
-            convertor = MeiGabcToCommon()
-    for split in dataset.keys():
-        parsed = gabc_parser.parse(dataset[split][args.transcript_column][5])
-        transformed = convertor.transform(parsed)
-        tokens = transformed.scan_values(lambda v: isinstance(v, Token))
-        print(split)
-        print("".join(token.value for token in tokens))
-
-
+            transformer = MeiGabcToCommon()
+    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column)
+    dataset = dataset.map(process_fn, batched=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
+    dataset.save_to_disk(f"out/common_encoding/{args.dataset.replace("/", "-")}", num_proc=args.threads)
         
 if __name__ == "__main__":
     args = parser.parse_args()
