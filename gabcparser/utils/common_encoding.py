@@ -313,37 +313,35 @@ class MeiGabcToCommon(Transformer):
         raise RuntimeError("clef_number should have length 1 or 2")
 
     def note(self, children):
-        # convert pitch to rhombus if necessary and remove doubled prefixes
+        # convert pitch to rhombus if necessary
         pitch = None
         rhombus = False
-        prev_prefix = None
+        prefix_move = None
         i = 0
         while i < len(children):
             if not isinstance(children[i], Tree):
+                i += 1
                 continue
-            if children[i].data == "prefix":
-                prefix = children[i]
-                if prev_prefix is not None:
-                    assert len(prev_prefix.children) == 1 and isinstance(prev_prefix.children[0], Tree) and prev_prefix.children[0].data == "accidental"
-                    assert len(prefix.children) == 1 and isinstance(prefix.children[0], Tree) and prefix.children[0].data == "accidental"
-                    prev_accidental = prev_prefix.children[0]
-                    accidental = prefix.children[0]
-                    assert len(prev_accidental.children) == 1 and len(accidental) == 1
-                    if prev_accidental.children[0].data == accidental.children[0]:
-                        # remove doubled prefix
-                        children.pop(i)
-                        # do not increment i; next element is at i-th position
-                        continue
-                prev_prefix = prefix
+            if children[i].data == "prefix_move":
+                prefix_move = children[i]
+                children.pop(i)
+                # do not increment i; next element is at i-th position
+                continue
             elif children[i].data == "pitch":
                 assert pitch is None
                 pitch = children[i]
+                if prefix_move is not None:
+                    prefix_move.data = "suffix"
+                    children.insert(i+1, prefix_move)
+                    i += 2 # move to next element - ignore moved prefix
+                    continue
             elif children[i].data == "suffix":
                 suffix = children[i]
-                assert len(suffix.children) == 2
-                if isinstance(suffix.chilren[1], Tree) \
-                      and suffix.chilren[1].data == "shape" \
-                      and suffix.chilren[1].children[0].data == "rhombus":
+                # minus was already removed
+                assert len(suffix.children) == 1
+                if isinstance(suffix.children[0], Tree) \
+                      and suffix.children[0].data == "shape" \
+                      and suffix.children[0].children[0].data == "rhombus":
                     # remove rhombus suffix
                     children.pop(i)
                     # do not increment i; next element is at i-th position
@@ -369,6 +367,14 @@ class MeiGabcToCommon(Transformer):
         children = [x for x in children if not (isinstance(x, Token) and x.type == "SPACE")]
 
         return Tree("note", children)
+
+    def prefix(self, children):
+        assert len(children) == 1 and isinstance(children[0], Tree) and children[0].data == "accidental"
+        return Tree("prefix_move", children)
+
+    def accidental_doubled(self, children):
+        assert len(children) == 3 and isinstance(children[0], Tree) and children[0].data in ["flat", "neutral"]
+        return Tree("accidental", [children[0]])
 
     def flat(self, children):
         return Tree("flat", [self._MUSIC_TAG, Token("CHAR_X", "x")])
