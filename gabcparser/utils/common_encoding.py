@@ -644,8 +644,9 @@ class MeiGabcToCommon(Transformer):
         return Tree("note", children)
 
     def prefix(self, children):
-        assert len(children) == 1 and isinstance(children[0], Tree) and children[0].data == "accidental"
-        return Tree("prefix_move", children)
+        assert len(children) == 2 and isinstance(children[0], Tree) and children[0].data == "accidental"
+        # remove space from prefix
+        return Tree("prefix_move", [children[0]])
 
     def accidental_doubled(self, children):
         assert len(children) == 3 and isinstance(children[0], Tree) and children[0].data in ["flat", "neutral"]
