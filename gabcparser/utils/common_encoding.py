@@ -622,8 +622,6 @@ class MeiGabcToCommon(Transformer):
                     # do not increment i; next element is at i-th position
                     continue
             i += 1
-        if rhombus is not None:
-            children.pop(rhombus)
         if pitch is not None:
             # pitch is already converted to GABC notation
             assert len(pitch.children) == 1 and isinstance(pitch.children[0], Token)
