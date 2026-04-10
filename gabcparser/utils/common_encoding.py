@@ -248,6 +248,9 @@ class GabcToCommon(Transformer):
     
     def quadratum(self, children):
         return Discard
+    
+    def quadratum_with_lines(self, children):
+        return Discard
 
     def empty_note(self, children):
         return Tree("empty_note", [self._MUSIC_TAG, Token("CHAR_R", "r")])

@@ -67,7 +67,7 @@ stem: virga_left | virga_right
 virga_left: MUSIC_TAG CHAR_V_
 virga_right: MUSIC_TAG CHAR_V
 
-shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum
+shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum | quadratum_with_lines
 oriscus: oriscus_scapus | oriscus_normal
 oriscus_normal: MUSIC_TAG CHAR_O (MUSIC_TAG (NUM_0 | NUM_1))?
 oriscus_scapus: MUSIC_TAG CHAR_O_ (MUSIC_TAG (NUM_0 | NUM_1))?
@@ -77,6 +77,7 @@ liquescent: MUSIC_TAG CHAR_TILDE
 liquescent_two_tails_down: MUSIC_TAG CHAR_GT
 liquescent_two_tails_up: MUSIC_TAG CHAR_LT
 quadratum: MUSIC_TAG CHAR_Q
+quadratum_with_lines: MUSIC_TAG CHAR_R_
 
 accidental: (flat | natural | sharp) accidental_parenthesized? | soft_flat | soft_natural | soft_sharp
 accidental_parenthesized: MUSIC_TAG QUESTION_MARK
@@ -104,7 +105,7 @@ MUSIC_MM_UNIT: MUSIC_TAG CHAR_M MUSIC_TAG CHAR_M
 
 empty_note: MUSIC_TAG CHAR_R (MUSIC_TAG NUM_0)?
 
-note_accents: MUSIC_TAG CHAR_R_ | MUSIC_TAG CHAR_R note_accent_type
+note_accents: MUSIC_TAG CHAR_R note_accent_type
 note_accent_type: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8)
 
 custom_ledger_line: MUSIC_TAG SQ_BRACKET_OPEN ledger_type MUSIC_TAG COLON (ledger_group_start | ledger_end_group | ledger_one_time) MUSIC_TAG SQ_BRACKET_CLOSE
