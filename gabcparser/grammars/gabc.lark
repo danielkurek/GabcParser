@@ -103,7 +103,9 @@ episema_tuning_block: MUSIC_TAG ("{" | "}")
 MUSIC_NUMBER: MUSIC_TAG NUM
 MUSIC_MM_UNIT: MUSIC_TAG CHAR_M MUSIC_TAG CHAR_M
 
-empty_note: MUSIC_TAG CHAR_R (MUSIC_TAG NUM_0)?
+empty_note: empty_note_normal | empty_note_with_lines
+empty_note_normal: MUSIC_TAG CHAR_R
+empty_note_with_lines: MUSIC_TAG CHAR_R MUSIC_TAG NUM_0
 
 note_accents: MUSIC_TAG CHAR_R note_accent_type
 note_accent_type: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5 | NUM_6 | NUM_7 | NUM_8)
