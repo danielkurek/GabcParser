@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
+    parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
@@ -821,6 +822,8 @@ def main(args: argparse.Namespace):
             transformer = MeiGabcToCommon()
     process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column)
     dataset = dataset.map(process_fn, batched=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
+    if args.remove_failed_rows:
+        dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads)
     dataset.save_to_disk(f"out/common_encoding/{args.dataset.replace("/", "-")}", num_proc=args.threads)
         
 if __name__ == "__main__":
