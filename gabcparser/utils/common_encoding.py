@@ -782,7 +782,7 @@ class MeiGabcToCommon(Transformer):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
-def process_batch(batch, grammar, transcript_column):
+def process_batch(batch, indices, grammar, transcript_column):
     parser = GabcParser.load_parser(args.grammar)
     transformer = None
     match args.grammar:
@@ -802,9 +802,9 @@ def process_batch(batch, grammar, transcript_column):
             tokens = transformed.scan_values(lambda v: isinstance(v, Token))
             batch[transformed_col][i] = "".join(token.value for token in tokens)
         except lark_exceptions.UnexpectedCharacters:
-            pass
+            print(f"Could not parse sample at index {indices[i]}")
         except lark_exceptions.VisitError as err:
-            print(f"{err.rule=} {err.orig_exc=}")
+            print(f"Could not transform sample (index: {indices[i]}): {err.rule=} {err.orig_exc=}")
     return batch
 
 def main(args: argparse.Namespace):
@@ -821,7 +821,7 @@ def main(args: argparse.Namespace):
         case grammars.MEI_GABC:
             transformer = MeiGabcToCommon()
     process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column)
-    dataset = dataset.map(process_fn, batched=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
+    dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads)
     dataset.save_to_disk(f"out/common_encoding/{args.dataset.replace("/", "-")}", num_proc=args.threads)
