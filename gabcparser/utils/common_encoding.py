@@ -693,6 +693,7 @@ class MeiGabcToCommon(Transformer):
                       and suffix.children[0].children[0].data == "rhombus":
                     # remove rhombus suffix
                     children.pop(i)
+                    rhombus = True
                     # do not increment i; next element is at i-th position
                     continue
             i += 1
@@ -700,7 +701,6 @@ class MeiGabcToCommon(Transformer):
             # pitch is already converted to GABC notation
             assert len(pitch.children) == 2 and isinstance(pitch.children[1], Token)
             pitch_sym = pitch.children[1].value
-            rhombus = rhombus is not None
             pitch.children = [
                 Tree(
                     "rhombus_pitch" if rhombus else "square_pitch",
