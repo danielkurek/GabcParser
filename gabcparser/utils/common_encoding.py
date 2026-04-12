@@ -9,6 +9,7 @@ from .. import GabcParser
 from datasets import load_dataset
 from functools import partial
 from collections import namedtuple
+import shutil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
@@ -17,6 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
     parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("--remove_mislabeled_custos", default=False, action="store_true", help="Remove mislabeled custos (with wrong pitch). Only applies to `mei-gabc` grammar")
+    parser.add_argument("--delete_without_asking", default=False, action="store_true", help="Disable prompt before deletion of output folder '[output_dir]/[dataset]'. It will DELETED WITHOUT ASKING.")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
@@ -829,7 +831,24 @@ def main(args: argparse.Namespace):
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads, load_from_cache_file=False)
-    dataset.save_to_disk(f"out/common_encoding/{args.dataset.replace("/", "-")}", num_proc=args.threads)
+    save_path = output_dir / args.dataset.replace("/", "-")
+    if save_path.exists():
+        delete = True
+        if not args.delete_without_asking:
+            answer = ""
+            while True:
+                answer = input(f"Output folder '{save_path}' already exists. Do you wish to delete it? Not deleting it might result in inconsistent dataset. [n/y]: ")
+                if answer not in ["n","y"]:
+                    print("Unexpected answer. Type 'n' for NO or 'y' for YES")
+                else:
+                    break
+            delete = answer == "y"
+        if not delete:
+            print("WARNING: Existing files in output directory will not be deleted. This may result in inconsistent or even corrupted dataset.")
+        else:
+            print(f"Deleting '{save_path}'")
+            shutil.rmtree(save_path)
+    dataset.save_to_disk(save_path, num_proc=args.threads)
         
 if __name__ == "__main__":
     args = parser.parse_args()
