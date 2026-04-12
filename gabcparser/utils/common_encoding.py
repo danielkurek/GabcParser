@@ -793,7 +793,7 @@ class MeiGabcToCommon(Transformer):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
-def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos):
+def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, add_original_index=False):
     parser = GabcParser.load_parser(args.grammar)
     transformer = None
     match args.grammar:
@@ -805,6 +805,8 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
             transformer = MeiGabcToCommon(remove_mislabeled_custos)
     transformed_col = f"{transcript_column}_common"
     batch[transformed_col] = [None] * len(batch[transcript_column])
+    if add_original_index:
+        batch["original_index"] = [int(x) for x in indices]
     for i in range(len(batch[transcript_column])):
         text = batch[transcript_column][i]
         try:
@@ -823,7 +825,7 @@ def main(args: argparse.Namespace):
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column, remove_mislabeled_custos=args.remove_mislabeled_custos)
+    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column, remove_mislabeled_custos=args.remove_mislabeled_custos, add_original_index=args.remove_failed_rows)
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads, load_from_cache_file=False)
