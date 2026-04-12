@@ -743,7 +743,7 @@ class MeiGabcToCommon(Transformer):
         pitch_num = self.pitch_to_num(pitch)
         pitch_distance = pitch_num - self.current_clef_num
         pitch_position = self.current_clef_position + pitch_distance
-        if pitch_position < 0 or pitch_position > 12 and self.remove_mislabeled_custos:
+        if (pitch_position < 0 or pitch_position > 12) and self.remove_mislabeled_custos:
             # if it is part of custos, whole custos will be removed
             # otherwise error will be thrown in note processing
             return Tree("pitch_error", children)
@@ -794,7 +794,7 @@ class MeiGabcToCommon(Transformer):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
-def process_batch(batch, indices, grammar, transcript_column):
+def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos):
     parser = GabcParser.load_parser(args.grammar)
     transformer = None
     match args.grammar:
@@ -803,7 +803,7 @@ def process_batch(batch, indices, grammar, transcript_column):
         case grammars.S_GABC:
             transformer = SGabcToCommon()
         case grammars.MEI_GABC:
-            transformer = MeiGabcToCommon()
+            transformer = MeiGabcToCommon(remove_mislabeled_custos)
     transformed_col = f"{transcript_column}_common"
     batch[transformed_col] = [None] * len(batch[transcript_column])
     for i in range(len(batch[transcript_column])):
@@ -824,15 +824,7 @@ def main(args: argparse.Namespace):
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    transformer = None
-    match args.grammar:
-        case grammars.GABC:
-            transformer = GabcToCommon()
-        case grammars.S_GABC:
-            transformer = SGabcToCommon()
-        case grammars.MEI_GABC:
-            transformer = MeiGabcToCommon(args.remove_mislabeled_custos)
-    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column)
+    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column, remove_mislabeled_custos=args.remove_mislabeled_custos)
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads)
