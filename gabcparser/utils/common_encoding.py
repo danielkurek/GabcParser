@@ -12,11 +12,10 @@ from collections import namedtuple
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Seperate lyrical and musical symbols in GABC files")
-    parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
-    parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
+    parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
