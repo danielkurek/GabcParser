@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
     parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
     parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
+    parser.add_argument("--remove_mislabeled_custos", default=False, action="store_true", help="Remove mislabeled custos (with wrong pitch). Only applies to `mei-gabc` grammar")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
@@ -529,11 +530,12 @@ class MeiGabcToCommon(Transformer):
     """
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
     
-    def __init__(self, debug: bool = False):
+    def __init__(self, remove_mislabeled_custos: bool = False):
         super().__init__()
         self.current_clef = None
         self.current_clef_num = None
         self.current_clef_position = None
+        self.remove_mislabeled_custos = remove_mislabeled_custos
     
     @staticmethod
     def pitch_to_num(pitch) -> int:
@@ -729,7 +731,9 @@ class MeiGabcToCommon(Transformer):
         return Tree("neutral", [self._MUSIC_TAG, Token("CHAR_Y", "y")])
 
     def malformed_note(self, children):
-        # remove typo
+        # remove typo and check if pitch conversion failed
+        if isinstance(children[1], Tree) and children[1].data == "pitch_error":
+            raise RuntimeError("Failed to convert pitch")
         return Tree("note", children[1:])
     
     def pitch(self, children):
@@ -739,6 +743,10 @@ class MeiGabcToCommon(Transformer):
         pitch_num = self.pitch_to_num(pitch)
         pitch_distance = pitch_num - self.current_clef_num
         pitch_position = self.current_clef_position + pitch_distance
+        if pitch_position < 0 or pitch_position > 12 and self.remove_mislabeled_custos:
+            # if it is part of custos, whole custos will be removed
+            # otherwise error will be thrown in note processing
+            return Tree("pitch_error", children)
         assert pitch_position >= 0 and pitch_position <= 12
         gabc_pitch = chr(ord('a') + pitch_position)
         
@@ -767,9 +775,14 @@ class MeiGabcToCommon(Transformer):
     def custos(self, children):
         pitch = None
         for child in children:
-            if isinstance(child, Tree) and child.data == "pitch":
+            if not isinstance(child, Tree):
+                continue
+            if child.data == "pitch":
                 pitch = child
                 break
+            if child.data == "pitch_error":
+                # this custos is most likely mislabeled
+                return Discard
         assert pitch is not None
         return Tree("custos", [pitch, self._MUSIC_TAG, Token("CHAR_PLUS", "+")])
     
@@ -818,7 +831,7 @@ def main(args: argparse.Namespace):
         case grammars.S_GABC:
             transformer = SGabcToCommon()
         case grammars.MEI_GABC:
-            transformer = MeiGabcToCommon()
+            transformer = MeiGabcToCommon(args.remove_mislabeled_custos)
     process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column)
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
