@@ -826,7 +826,7 @@ def main(args: argparse.Namespace):
     process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column, remove_mislabeled_custos=args.remove_mislabeled_custos)
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
-        dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads)
+        dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads, load_from_cache_file=False)
     dataset.save_to_disk(f"out/common_encoding/{args.dataset.replace("/", "-")}", num_proc=args.threads)
         
 if __name__ == "__main__":
