@@ -588,7 +588,7 @@ class MeiGabcToCommon(Transformer):
                         else:
                             # convert to porrectus
                             prev_porrectus_note.children.insert(0, Tree("prefix", [
-                                Tree("porrectus", [Token("DEGREE", "°")])
+                                Tree("porrectus", [self._MUSIC_TAG, Token("DEGREE", "°")])
                                 ]))
                             prev_porrectus_note = None
                             pass
@@ -698,15 +698,15 @@ class MeiGabcToCommon(Transformer):
             i += 1
         if pitch is not None:
             # pitch is already converted to GABC notation
-            assert len(pitch.children) == 1 and isinstance(pitch.children[0], Token)
-            pitch_sym = pitch.children[0].value
+            assert len(pitch.children) == 2 and isinstance(pitch.children[1], Token)
+            pitch_sym = pitch.children[1].value
             rhombus = rhombus is not None
             pitch.children = [
                 Tree(
                     "rhombus_pitch" if rhombus else "square_pitch",
                     [
                         self._MUSIC_TAG,
-                        Token(pitch.children[0].type, pitch_sym.upper() if rhombus else pitch_sym)
+                        Token(pitch.children[1].type, pitch_sym.upper() if rhombus else pitch_sym)
                     ])
             ]
         
@@ -750,8 +750,7 @@ class MeiGabcToCommon(Transformer):
         assert pitch_position >= 0 and pitch_position <= 12
         gabc_pitch = chr(ord('a') + pitch_position)
         
-        # MUSIC_TAG is added in `note` function
-        return Tree("pitch", [Token("PITCH", gabc_pitch)])
+        return Tree("pitch", [self._MUSIC_TAG, Token("PITCH", gabc_pitch)])
     
     def suffix(self, children):
         if len(children) == 0:
