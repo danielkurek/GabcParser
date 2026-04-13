@@ -5,14 +5,16 @@ from multiprocessing import Pool
 import tqdm
 from .. import grammars
 from .. import GabcParser
+from datasets import load_dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="Print lines that do not conform to specified grammar")
     parser.add_argument("-s", "--skip", type=int, default=1, help="Skip first n lines of the csv input file (default is 1 -> skip header)")
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
     parser.add_argument("--stop", action="store_true", help="Stop on first error (works only in single threaded mode")
+    parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
-    parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
+    parser.add_argument("dataset", help="HuggingFace dataset name")
 
 def csv_reader(file, skip_lines):
     with open(file) as f:
@@ -38,23 +40,25 @@ def process_row(row):
 
 def main(args: argparse.Namespace):
     gabc_parser = GabcParser.load_parser(args.grammar)
+    dataset = load_dataset(args.dataset)
     if args.threads is None:
-        for row in csv_reader(args.csv_input, args.skip):
-            try:
-                gabc_parser.parse(row[1])
-            except lark.exceptions.UnexpectedCharacters as err:
-                error_part = row[1][max(0, err.column-20):min(len(row[1]), err.column+20)]
-                print(f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column} -->{error_part}")
-                if args.stop:
-                    raise
+        for split in dataset.keys():
+            total_samples = len(dataset[split][args.transcript_column])
+            for i,text in tqdm.tqdm(enumerate(dataset[split][args.transcript_column]), desc=split, total=total_samples):
+                try:
+                    gabc_parser.parse(text)
+                except lark.exceptions.UnexpectedCharacters as err:
+                    error_part = text[max(0, err.column-20):min(len(text), err.column+20)]
+                    print(f"{split},{i},{text}\nchar={err.char} ({ord(err.char)=}) col={err.column} -->{error_part}")
+                    if args.stop:
+                        raise
     else:
         pool = Pool(args.threads, initializer=worker_init, initargs=(args.grammar,))
-        total_lines = None
-        with open(args.csv_input, "rb") as f:
-            total_lines = sum(1 for _ in f)
-        for result in tqdm.tqdm(pool.imap(process_row, csv_reader(args.csv_input, args.skip), 20), total=total_lines):
-            if result is not None:
-                print(result)
+        for split in dataset.keys():
+            total_samples = len(dataset[split][args.transcript_column])
+            for result in tqdm.tqdm(pool.imap(process_row, enumerate(dataset[split][args.transcript_column]), 20), desc=split, total=total_samples):
+                if result is not None:
+                    print(f"{split},{result}")
 
         
 if __name__ == "__main__":
