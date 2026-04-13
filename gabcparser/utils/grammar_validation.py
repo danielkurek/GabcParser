@@ -33,7 +33,8 @@ def process_row(row):
     try:
         lark_parser.parse(row[1])
     except lark.exceptions.UnexpectedCharacters as err:
-        return f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column}"
+        error_part = row[1][max(0, err.column-20):min(len(row[1]), err.column+20)]
+        return f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column} -->{error_part}"
 
 def main(args: argparse.Namespace):
     gabc_parser = GabcParser.load_parser(args.grammar)
@@ -42,7 +43,8 @@ def main(args: argparse.Namespace):
             try:
                 gabc_parser.parse(row[1])
             except lark.exceptions.UnexpectedCharacters as err:
-                print(f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column}")
+                error_part = row[1][max(0, err.column-20):min(len(row[1]), err.column+20)]
+                print(f"{row[0]},{row[1]}\nchar={err.char} ({ord(err.char)=}) col={err.column} -->{error_part}")
                 if args.stop:
                     raise
     else:
