@@ -561,12 +561,6 @@ class MeiGabcToCommon(Transformer):
 
     def syl_musical_symbols_parentheses(self, children):
         # convert porrectus
-        def note_index_porrectus(children):
-            for i,child in enumerate(children):
-                if isinstance(child, Tree) and child.data == "suffix" \
-                    and any(isinstance(x, Tree) and x.data == "porrectus" for x in child.children):
-                    return i
-            return None
         prev_porrectus_note = None
         # find notes and store the direct preceding note with porrectus
         for i in range(len(children)):
@@ -579,11 +573,34 @@ class MeiGabcToCommon(Transformer):
                         note = child
                         break
                 if note is not None:
-                    ligated_index = note_index_porrectus(note.children)
+                    ligated_index = None
+                    suffix_count = 0
+                    # rhombus suffix was already converted to gabc notation; we need to detect it separately
+                    is_rhombus = False
+                    for i,child in enumerate(note.children):
+                        if not isinstance(child, Tree):
+                            continue
+                        if child.data == "pitch":
+                            # converted pitch
+                            pitch = child
+                            assert len(pitch.children) == 1 and isinstance(pitch.children[0], Tree)
+                            is_rhombus = pitch.children[0].data == "rhombus_pitch"
+                        if child.data == "suffix":
+                            suffix = child
+                            # we count also accidental as suffix (because it was already converted) but it does not change the result
+                            suffix_count += 1
+                            # MINUS is already removed in suffix transformation => len is only 1
+                            assert len(suffix.children) == 1 and isinstance(suffix.children[0], Tree)
+                            if suffix.children[0].data == "ligated":
+                                ligated_index = i
                     if ligated_index is None:
                         prev_porrectus_note = None
+                    elif suffix_count != 1 or is_rhombus:
+                        # porrectus can have only `-l` suffix
+                        note.children.pop(ligated_index)
+                        prev_porrectus_note = None
                     else:
-                        # remove `-l` suffix
+                        # remove suffix
                         note.children.pop(ligated_index)
                         if prev_porrectus_note is None:
                             prev_porrectus_note = note
@@ -593,7 +610,6 @@ class MeiGabcToCommon(Transformer):
                                 Tree("porrectus", [self._MUSIC_TAG, Token("DEGREE", "°")])
                                 ]))
                             prev_porrectus_note = None
-                            pass
                 elif prev_porrectus_note is not None:
                     # not a direct sibling
                     prev_porrectus_note = None
