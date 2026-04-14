@@ -579,12 +579,12 @@ class MeiGabcToCommon(Transformer):
                         note = child
                         break
                 if note is not None:
-                    porrectus_index = note_index_porrectus(note.children)
-                    if porrectus_index is None:
+                    ligated_index = note_index_porrectus(note.children)
+                    if ligated_index is None:
                         prev_porrectus_note = None
                     else:
                         # remove `-l` suffix
-                        note.children.pop(porrectus_index)
+                        note.children.pop(ligated_index)
                         if prev_porrectus_note is None:
                             prev_porrectus_note = note
                         else:

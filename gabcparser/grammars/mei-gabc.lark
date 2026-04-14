@@ -20,13 +20,13 @@ prefix: (accidental | accidental_doubled) SPACE
 
 pitch: "a".."h" NUM
 
-suffix: MINUS (stem | porrectus | shape)
+suffix: MINUS (stem | ligated | shape)
 
 stem: virga_left | virga_right
 virga_right: CHAR_S // virga - stem on the right side (free standing note); tilt=s in MEI
 virga_left: CHAR_N // stem on the left side (when is closely followed with descending note); tilt=n in MEI
 
-porrectus: CHAR_L // connected with line (for prorrectus); ligated=true in MEI
+ligated: CHAR_L // connected notes - with line (porrectus) or notes are close together; ligated=true in MEI
 
 shape: rhombus | liquescent_two_tails_down | liquescent_two_tails_up
 rhombus: CHAR_S CHAR_E // rhombus shape; tilt=se in MEI
