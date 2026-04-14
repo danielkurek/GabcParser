@@ -752,7 +752,7 @@ class MeiGabcToCommon(Transformer):
         # remove typo and check if pitch conversion failed
         if isinstance(children[1], Tree) and children[1].data == "pitch_error":
             raise RuntimeError("Failed to convert pitch")
-        return Tree("note", children[1:])
+        return self.note(children[1:])
     
     def pitch(self, children):
         assert self.current_clef_num is not None and self.current_clef_position is not None
