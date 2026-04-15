@@ -135,7 +135,11 @@ class GabcToCommon(Transformer):
                 i += len(note_unwrap.children) # any of the notes in note_unwrap cannot be part of porrectus nor is it zero-width space
                 note_history.clear()
                 continue
-            if musical_symbol.children[0].data == "note":
+            if musical_symbol.children[0].data != "note":
+                note_history.clear()
+            else:
+                # Processing of note
+                #
                 # Detection of porrectus
                 # rules according to Gregorio source code and experimentation (probably not 100% correct)
                 #   - porrectus determination - add_note_to_a_glyph in src/gabc/gabc-glyphs-determination.c
