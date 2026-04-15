@@ -216,6 +216,7 @@ class GabcToCommon(Transformer):
                             self._MUSIC_TAG,
                             Tree("porrectus", [Token("DEGREE", "°")])
                         ]))
+                        note_history.clear()
                     else:
                         note_history.pop(0)
                 elif len(note_history) > 3:
