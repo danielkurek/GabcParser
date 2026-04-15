@@ -166,7 +166,7 @@ class GabcToCommon(Transformer):
                         raise RuntimeError("Unexpected repetition found - there should be none at this point in the program")
                     if child.data == "prefix":
                         prefix = child
-                        assert len(prefix.children) == 0 and isinstance(prefix.children[0], Tree)
+                        assert len(prefix.children) == 1 and isinstance(prefix.children[0], Tree)
                         prefix_type = prefix.children[0].data
                         if prefix_type == "initio_debilis":
                             possible_porrectus = False
