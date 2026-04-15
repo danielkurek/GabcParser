@@ -213,6 +213,7 @@ class GabcToCommon(Transformer):
                         and rel_pitch_3 > 0 and rel_pitch_3 <= self.porrectus_threshold
                     if correct_positions and correct_pitches:
                         note_history[0].note.children.insert(0, Tree("prefix", [
+                            self._MUSIC_TAG,
                             Tree("porrectus", [Token("DEGREE", "°")])
                         ]))
                     else:
