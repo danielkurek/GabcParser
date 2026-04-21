@@ -339,7 +339,7 @@ class GabcToCommon(Transformer):
     def soft_flat(self, children):
         return Tree("flat", [self._MUSIC_TAG, Token("CHAR_X", "x")])
 
-    def soft_neutral(self, children):
+    def soft_natural(self, children):
         return Tree("neutral", [self._MUSIC_TAG, Token("CHAR_Y", "y")])
 
     def soft_sharp(self, children):
