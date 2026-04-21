@@ -1,5 +1,4 @@
 // grammar
-WS: /[ \n\r\t]/
 start: syllable+
 syllable: syl_lyric_symbols | syl_musical_symbols
 
@@ -139,7 +138,8 @@ A_LYRIC: "A/"
 OE_LYRIC: "óe"
 AE_LYRIC: "áe"
 
-SYLLABLE: /[a-zA-Z0-9;áéíóúÁÉÍÓÚ:.\/,æ-]+/ | "*"+
+SYLLABLE: /(\w|['&#~%!;:.?\\\/,†+✠»«\[\]ǽœ́ý¶℟æœȺꞦꝞ-])/u | "*"+
+WS: /\s/
 DEGREE: "°" | "º" | "ª"
 COMMA: ","
 SEMICOLON: ";"
