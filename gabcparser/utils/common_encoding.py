@@ -656,6 +656,8 @@ class MeiGabcToCommon(Transformer):
                     children[0],
                     Token("PARENTH_CLOSE", ")"),
                 ])
+        # filter out spaces
+        children = [x for x in children if not (isinstance(x, Token) and x.type == "SPACE")]
         return Tree("syl_musical_symbols", [
                 Tree("syl_musical_symbols_parentheses", children + [Token("PARENTH_CLOSE", ")")])
             ])
