@@ -666,7 +666,7 @@ class MeiGabcToCommon(Transformer):
         # pitch conversion
         assert len(children) == 2
         assert children[0].data == "clef_symbol"
-        assert children[1].data == "clef_number"
+        assert children[1].data == "clef_number" or children[1].data == "clef_number_remove"
         clef_symbol = children[0]
         clef_number= children[1]
 
@@ -678,7 +678,10 @@ class MeiGabcToCommon(Transformer):
         self.current_clef = (symbol, number)
         self.current_clef_num = self.pitch_to_num((symbol.lower(), 3))
         self.current_clef_position = 1 + 2*number
-
+        
+        if children[1].data == "clef_number_remove":
+            # this fixes typo in Salzinnes dataset
+            return Discard
         return Tree("clef", children)
     
     def clef_symbol(self, children):
@@ -689,7 +692,8 @@ class MeiGabcToCommon(Transformer):
         if len(children) == 1:
             return Tree("clef_number", [self._MUSIC_TAG, children[0]])
         elif len(children) == 2:
-            return Tree("clef_number", [self._MUSIC_TAG, children[0], self._MUSIC_TAG, children[1]])
+            assert isinstance(children[0], Token) and children[0].type == "MINUS"
+            return Tree("clef_number_remove", [self._MUSIC_TAG, children[0], self._MUSIC_TAG, children[1]])
         raise RuntimeError("clef_number should have length 1 or 2")
 
     def note(self, children):
