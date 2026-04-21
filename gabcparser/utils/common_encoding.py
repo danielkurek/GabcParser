@@ -351,8 +351,11 @@ class GabcToCommon(Transformer):
     def position_vertical_episema(self, children):
         return Discard
     
-    # def position_horizontal_episema(self, children):
-    #     return Discard
+    def position_horizontal_episema(self, children):
+        assert len(children) == 2 and isinstance(children[1], Token)
+        if children[1].type != "NUM_0" and children[1].type != "NUM_1":
+            return Discard
+        return Tree("position_horizontal_episema", children)
     
     def position_tuning_episema(self, children):
         return Discard
@@ -509,6 +512,12 @@ class SGabcToCommon(Transformer):
     
     def oriscus(self, children):
         return Tree("oriscus", [self._MUSIC_TAG, Token("CHAR_O", "o")])
+    
+    def position_horizontal_episema(self, children):
+        assert len(children) == 2 and isinstance(children[1], Token)
+        if children[1].type != "NUM_0" and children[1].type != "NUM_1":
+            return Discard
+        return Tree("position_horizontal_episema", children)
     
     def EXCLAM_MARK(self, token):
         return Token("EXCLAM_MARK", "!")

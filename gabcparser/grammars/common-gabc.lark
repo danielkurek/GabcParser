@@ -48,7 +48,7 @@ sharp: MUSIC_TAG CHAR_HASH
 rhythmic_sign: episema_vertical | episema_horizontal | punctum_mora
 episema_vertical: MUSIC_TAG APOSTROPHE
 episema_horizontal: MUSIC_TAG UNDERSCORE position_horizontal_episema?
-position_horizontal_episema: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5) //TODO: maybe simplify
+position_horizontal_episema: MUSIC_TAG (NUM_0 | NUM_1)
 punctum_mora: MUSIC_TAG DOT
 
 empty_note: MUSIC_TAG CHAR_R

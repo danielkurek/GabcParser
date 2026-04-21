@@ -61,7 +61,7 @@
 | --- vertical                 | :white_check_mark: | :white_check_mark:  | :x:                | :white_check_mark:?                            |
 | ---- position tuning         | :white_check_mark: | :x:                 | :x:                | :x:                                            |
 | --- horizontal               | :white_check_mark: | :white_check_mark:  | :x:                | :white_check_mark:                             |
-| ---- position tuning         | :white_check_mark: | :white_check_mark:  | :x:                | :x:?                                           |
+| ---- position tuning         | :white_check_mark: | :white_check_mark:  | :x:                | :white_check_mark: only `0` and `1`            |
 | -- punctum mora              | :white_check_mark: | :white_check_mark:  | :x:                | :white_check_mark:                             |
 | - line break                 | :white_check_mark: | :x:                 | :x:                | :x:                                            |
 | - CONT                       | :x:                | :white_check_mark:  | :x:                | :x:?                                           |
