@@ -715,6 +715,8 @@ class MeiGabcToCommon(Transformer):
                     children.insert(i+1, prefix_move)
                     i += 2 # move to next element - ignore moved prefix
                     continue
+            elif children[i].data == "pitch_error":
+                raise RuntimeError("Failed to convert pitch")
             elif children[i].data == "suffix":
                 suffix = children[i]
                 # minus was already removed
