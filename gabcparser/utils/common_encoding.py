@@ -685,8 +685,9 @@ class MeiGabcToCommon(Transformer):
         return Tree("clef", children)
     
     def clef_symbol(self, children):
-        assert len(children) == 1
-        return Tree("clef_symbol", [self._MUSIC_TAG, *children])
+        assert len(children) == 1 and isinstance(children[0], Token)
+        symbol = children[0].value.lower()
+        return Tree("clef_symbol", [self._MUSIC_TAG, Token(f"CHAR_{symbol.upper()}_", symbol)])
     
     def clef_number(self, children):
         if len(children) == 1:
