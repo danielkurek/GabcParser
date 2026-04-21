@@ -357,9 +357,14 @@ class GabcToCommon(Transformer):
     def position_tuning_episema(self, children):
         return Discard
     
-    def note_accent(self, children):
+    def note_accents(self, children):
         # it is rendered as empty note in available data
-        return Tree("empty_note", [self._MUSIC_TAG, Token("CHAR_R", "r")])
+        return Tree("empty_note", [
+            Tree("empty_note_normal", [
+                self._MUSIC_TAG,
+                Token("CHAR_R", "r")
+            ])
+        ])
     
     def custom_ledger_line(self, children):
         return Discard
