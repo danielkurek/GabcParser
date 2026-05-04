@@ -222,7 +222,7 @@ CLOSE_NLBA: "</nlba>"
 CLOSE_ELISION: "</e>"
 CLOSE_ABOVE_LINE: "</alt>"
 
-SYLLABLE: /(\w|['&#~%!;:.?\/,†+✠-])/u | "*"+
+SYLLABLE: /(\w|['&#~%!;:.?\\\/,†+✠»«℟\[\]ǽœ́ý¶-])/u | "*"+
 WS: /\s/
 PORRECTUS: "º" | "°" | "ª"
 COMMA: ","
