@@ -199,7 +199,9 @@ SQ_BRACKET_OPEN: "["
 SQ_BRACKET_CLOSE: "]"
 PARENTH_OPEN: "("
 PARENTH_CLOSE: ")"
-OPEN_LYRIC_SPECIAL: "<sp>" | "<spp>" | "<ssp>" // officially only <sp> is allowed
+
+// Lyric modifiers tags
+OPEN_LYRIC_SPECIAL: "<sp>"
 OPEN_BOLD: "<b>"
 OPEN_ITALIC: "<i>"
 OPEN_COLOR: "<c>"
