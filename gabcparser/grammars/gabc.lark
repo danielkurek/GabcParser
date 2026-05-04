@@ -232,7 +232,7 @@ SEMICOLON: ";"
 COLON: ":"
 CARET: "^"
 BACKTICK: "`"
-TEX_SYMBOLS: /[a-z0-9.;\\{} $]/i
+TEX_SYMBOLS: /[a-z0-9.;\\{} $-]/i
 NUM: "0".."9"
 OPEN_EUOUAE: "<eu>"
 CLOSE_EUOUAE: "</eu>"
