@@ -27,7 +27,7 @@ elision_text: OPEN_ELISION syl_lyric_symbols* CLOSE_ELISION
 above_line_text: OPEN_ABOVE_LINE syl_lyric_symbols* CLOSE_ABOVE_LINE
 euouae_text: OPEN_EUOUAE syllable+ CLOSE_EUOUAE?
 tex_text: OPEN_TEX TEX_SYMBOLS* CLOSE_TEX
-syllable_centering: CURLY_BRACKET_OPEN  SYLLABLE* CURLY_BRACKET_CLOSE
+syllable_centering: CURLY_BRACKET_OPEN  syl_lyric_symbols* CURLY_BRACKET_CLOSE
 
 
 syl_musical_symbols: PARENTH_OPEN musical_symbol* PARENTH_CLOSE
