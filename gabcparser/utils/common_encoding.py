@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--threads", type=int, default=None, help="Process file in multiple threads")
     parser.add_argument("-o", "--output_dir", type=str, default="out/", help="Output directory")
     parser.add_argument("--transcript_column", type=str, default="transcription", help="Transcription column name")
+    parser.add_argument("--keep_original_transcript", default=False, action="store_true", help="Keep original transcription column (will be renamed by appending `_original`)")
     parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("--remove_mislabeled_custos", default=False, action="store_true", help="Remove mislabeled custos (with wrong pitch). Only applies to `mei-gabc` grammar")
     parser.add_argument("--delete_without_asking", default=False, action="store_true", help="Disable prompt before deletion of output folder '[output_dir]/[dataset]'. It will DELETED WITHOUT ASKING.")
@@ -840,7 +841,7 @@ class MeiGabcToCommon(Transformer):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
-def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, add_original_index=False):
+def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, keep_original_transcript=False, add_original_index=False):
     parser = GabcParser.load_parser(args.grammar)
     transformer = None
     match args.grammar:
@@ -850,8 +851,8 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
             transformer = SGabcToCommon()
         case grammars.MEI_GABC:
             transformer = MeiGabcToCommon(remove_mislabeled_custos)
-    transformed_col = f"{transcript_column}_common"
-    batch[transformed_col] = [None] * len(batch[transcript_column])
+    if keep_original_transcript:
+        batch[f"{transcript_column}_original"] = list(batch[transcript_column])
     if add_original_index:
         batch["original_index"] = [int(x) for x in indices]
     for i in range(len(batch[transcript_column])):
@@ -860,11 +861,13 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
             parsed = parser.parse(text)
             transformed = transformer.transform(parsed)
             tokens = transformed.scan_values(lambda v: isinstance(v, Token))
-            batch[transformed_col][i] = "".join(token.value for token in tokens)
+            batch[transcript_column][i] = "".join(token.value for token in tokens)
         except lark_exceptions.UnexpectedCharacters:
             print(f"Could not parse sample at index {indices[i]}")
+            batch[transcript_column][i] = None
         except lark_exceptions.VisitError as err:
             print(f"Could not transform sample (index: {indices[i]}): {err.rule=} {err.orig_exc=}")
+            batch[transcript_column][i] = None
     return batch
 
 def main(args: argparse.Namespace):
@@ -872,10 +875,17 @@ def main(args: argparse.Namespace):
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    process_fn = partial(process_batch, grammar=args.grammar, transcript_column=args.transcript_column, remove_mislabeled_custos=args.remove_mislabeled_custos, add_original_index=args.remove_failed_rows)
+    process_fn = partial(
+        process_batch, 
+        grammar=args.grammar,
+        transcript_column=args.transcript_column,
+        keep_original_transcript=args.keep_original_transcript,
+        remove_mislabeled_custos=args.remove_mislabeled_custos,
+        add_original_index=args.remove_failed_rows
+    )
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
-        dataset = dataset.filter(lambda x: x is not None, input_columns=f"{args.transcript_column}_common", num_proc=args.threads, load_from_cache_file=False)
+        dataset = dataset.filter(lambda x: x is not None, input_columns=args.transcript_column, num_proc=args.threads, load_from_cache_file=False)
     save_path = output_dir / args.dataset.replace("/", "-")
     if save_path.exists():
         delete = True
