@@ -886,7 +886,7 @@ def main(args: argparse.Namespace):
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=args.transcript_column, num_proc=args.threads, load_from_cache_file=False)
-    save_path = output_dir / args.dataset.replace("/", "-")
+    save_path = output_dir / Path(args.dataset).stem
     if save_path.exists():
         delete = True
         if not args.delete_without_asking:
