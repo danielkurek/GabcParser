@@ -36,6 +36,9 @@ GABC format that is used in [GregoSynth dataset](https://huggingface.co/datasets
 
 There is no single formal definition of the GABC format. The grammar was created using [Gregorio (version 6.1.0) reference documentation](https://github.com/gregorio-project/gregorio/releases/tag/v6.1.0) and the corresponding NABC reference (although NABC is not parsed). The created grammar was validated using [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) from AMNLT paper. There are still some samples that do not conform to the grammar. However, majority of these samples include either errors (which led to incorrect render) or NABC notation (which is currently not supported). The following table summarizes the unconforming samples.
 
+> [!WARNING]
+> This table is outdated. The grammar was modified to be stricter which means that more samples are not parsable.
+
 | Error                                     | # samples | Notes                                                               |
 |-------------------------------------------|-----------|---------------------------------------------------------------------|
 | Incorrect parentheses pairing             | 1596      | Either `))` (1439 occurrences) or `<m>(` (260 occurrences)          |
