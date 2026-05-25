@@ -37,7 +37,7 @@ GABC format that is used in [GregoSynth dataset](https://huggingface.co/datasets
 There is no single formal definition of the GABC format. The grammar was created using [Gregorio (version 6.1.0) reference documentation](https://github.com/gregorio-project/gregorio/releases/tag/v6.1.0) and the corresponding NABC reference (although NABC is not parsed). The created grammar was validated using [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) from AMNLT paper. There are still some samples that do not conform to the grammar. However, majority of these samples include either errors (which led to incorrect render) or NABC notation (which is currently not supported). The following table summarizes the unconforming samples.
 
 > [!WARNING]
-> This table is outdated. The grammar was modified to be stricter which means that more samples are not parsable.
+> The detailed analysis of errors are outdated, only the total number of errors is current. The grammar was modified to be stricter which means that more samples are not parsable. Generally, the listed errors remain also in the new version of the grammar. However, the new grammar does not allow mistyped lyric formatting tags since they (sometimes) results in errors in the rendered pictures.
 
 | Error                                     | # samples | Notes                                                               |
 |-------------------------------------------|-----------|---------------------------------------------------------------------|
@@ -54,7 +54,7 @@ There is no single formal definition of the GABC format. The grammar was created
 | `@[...]` note fusing group                | 2         | Not implemented                                                     |
 | Episema position tuning without episema   | 2         | Incorrect syntax                                                    |
 | Other                                     | 205       | Not yet analyzed                                                    |
-| **Total**                                 | **3162**  | Some samples have more than one issue (counted twice in this table) |
+| **Total**                                 | **6146**  | Some samples have more than one issue (counted twice in this table) |
 
 - supported features (music tags are omitted for better readability)
   - lyrics
