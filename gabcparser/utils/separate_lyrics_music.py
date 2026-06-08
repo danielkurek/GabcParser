@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
 def filter_syllables(tree, pred, filtered_symbol=None):
     for syl in tree.children:
-        assert syl.data in ["syllable", "malformed_syllable"]
+        assert syl.data in ["syllable", "malformed_ending"]
         assert len(syl.children) == 1
-        assert syl.children[0].data in ["syl_lyric_symbols", "syl_musical_symbols", "malformed_music"]
+        assert syl.children[0].data in ["syl_lyric_symbols", "syl_musical_symbols", "malformed_ending_music"]
         if pred(syl.children[0]):
             yield syl
         elif filtered_symbol is not None:
