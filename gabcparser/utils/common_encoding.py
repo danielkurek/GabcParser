@@ -37,14 +37,9 @@ class GabcToCommon(Transformer):
             return Discard
         return Tree(data, children, meta)
 
-    # def syl_lyric_symbols(self, children):
-    #     # TODO: change modified lyrics to this rule
-    #     pass
-
     def special_lyric(self, children):
         text = "".join([x.value for x in children if isinstance(x, Token) and x.type == "SYLLABLE"])
         new_text = None
-        # TODO: maybe add more cases
         match text:
             case "ae":
                 new_text = "æ"
@@ -106,7 +101,6 @@ class GabcToCommon(Transformer):
         assert isinstance(children[-1], Token) and children[-1].type == "PARENTH_CLOSE"
         # remove multiple zero_width_space in succession - keep only one
         # unwrap notes if needed
-        # TODO: detect porrectus
         if len(children) == 2:
             # remove empty parentheses
             return Discard
