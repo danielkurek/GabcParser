@@ -156,7 +156,6 @@ class GabcToCommon(Transformer):
                 # - disallowed suffixes - accidental, `R`, `r0`, repetition, quadratum, oriscus, quilisma, virga, strophicus
                 note = musical_symbol.children[0]
                 pitch = None
-                can_be_second = True
                 allowed_positions = [True, True, True]
                 possible_porrectus = True
                 for child in note.children:
@@ -871,7 +870,6 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
     return batch
 
 def main(args: argparse.Namespace):
-    gabc_parser = GabcParser.load_parser(args.grammar)
     dataset = load_dataset(args.dataset)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
