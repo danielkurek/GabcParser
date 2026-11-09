@@ -262,15 +262,16 @@ class GabcToCommon(Transformer):
         assert isinstance(pitch_token, Token)
         if repetition.data.endswith("stropha"):
             new_pitch = Tree("pitch", [Tree("rhombus_pitch", [self._MUSIC_TAG, Token("CHAR_A2M_", pitch_token.value.upper())])])
-            suffix = Tree("shape", [Tree("liquescent_two_tails_down", [self._MUSIC_TAG, Token("CHAR_GT", ">")])])
+            suffix = Tree("suffix", [Tree("shape", [Tree("liquescent_two_tails_down", [self._MUSIC_TAG, Token("CHAR_GT", ">")])])])
             notes.append(Tree("note", prefixes + [new_pitch, suffix]))
             for _ in range(1, repetition_num):
                 notes.append(Tree("note",  [new_pitch, suffix]))
         elif repetition.data.endswith("virga"):
             new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
-            notes.append(Tree("note", prefixes + [new_pitch]))
+            suffix = Tree("suffix", [Tree("stem", [Tree("virga_right", [self._MUSIC_TAG, Token("CHAR_V", "v")])])])
+            notes.append(Tree("note", prefixes + [new_pitch, suffix]))
             for _ in range(1, repetition_num):
-                notes.append(Tree("note",  [new_pitch]))
+                notes.append(Tree("note",  [new_pitch, suffix]))
         else:
             raise ValueError(f"Unknown repetition type `{repetition.data}`")
         # unwrapping is done in `syl_musical_symbols`
