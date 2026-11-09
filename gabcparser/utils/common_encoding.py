@@ -260,20 +260,20 @@ class GabcToCommon(Transformer):
         prefixes = [x for x in children if isinstance(x, Tree) and x.data == "prefix"]
         pitch_token = pitch.children[0].children[1]
         assert isinstance(pitch_token, Token)
+        new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
+        note_group = [new_pitch]
         if repetition.data.endswith("stropha"):
-            new_pitch = Tree("pitch", [Tree("rhombus_pitch", [self._MUSIC_TAG, Token("CHAR_A2M_", pitch_token.value.upper())])])
-            suffix = Tree("suffix", [Tree("shape", [Tree("liquescent_two_tails_down", [self._MUSIC_TAG, Token("CHAR_GT", ">")])])])
-            notes.append(Tree("note", prefixes + [new_pitch, suffix]))
-            for _ in range(1, repetition_num):
-                notes.append(Tree("note",  [new_pitch, suffix]))
+            suffix = Tree("suffix", [Tree("shape", [Tree("strophicus", [self._MUSIC_TAG, Token("CHAR_S", "s")])])])
+            note_group = [new_pitch, suffix]
         elif repetition.data.endswith("virga"):
             new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
             suffix = Tree("suffix", [Tree("stem", [Tree("virga_right", [self._MUSIC_TAG, Token("CHAR_V", "v")])])])
-            notes.append(Tree("note", prefixes + [new_pitch, suffix]))
-            for _ in range(1, repetition_num):
-                notes.append(Tree("note",  [new_pitch, suffix]))
+            note_group = [new_pitch, suffix]
         else:
             raise ValueError(f"Unknown repetition type `{repetition.data}`")
+        notes.append(Tree("note", prefixes + note_group))
+        for _ in range(1, repetition_num):
+            notes.append(Tree("note",  note_group))
         # unwrapping is done in `syl_musical_symbols`
         return Tree("note_unwrap", notes)
 
