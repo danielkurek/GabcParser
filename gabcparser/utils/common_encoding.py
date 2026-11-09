@@ -835,9 +835,9 @@ class MeiGabcToCommon(Transformer):
             ])
 
 def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, keep_original_transcript=False, add_original_index=False):
-    parser = GabcParser.load_parser(args.grammar)
+    parser = GabcParser.load_parser(grammar)
     transformer = None
-    match args.grammar:
+    match grammar:
         case grammars.GABC:
             transformer = GabcToCommon()
         case grammars.S_GABC:
