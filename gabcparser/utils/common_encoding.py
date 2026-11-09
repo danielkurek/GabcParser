@@ -94,7 +94,7 @@ class GabcToCommon(Transformer):
         return Discard
 
     def syllable_centering(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Token) and x.type == "SYLLABLE"])
+        return Tree("syl_lyric_symbols", [x for x in children if not isinstance(x, Token)])
     
     def syl_musical_symbols(self, children):
         assert isinstance(children[0], Token) and children[0].type == "PARENTH_OPEN"
