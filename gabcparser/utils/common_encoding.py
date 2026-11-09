@@ -258,6 +258,7 @@ class GabcToCommon(Transformer):
         
         notes = []
         prefixes = [x for x in children if isinstance(x, Tree) and x.data == "prefix"]
+        suffixes = [x for x in children if isinstance(x, Tree) and x.data == "suffix"]
         pitch_token = pitch.children[0].children[1]
         assert isinstance(pitch_token, Token)
         new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
@@ -274,6 +275,7 @@ class GabcToCommon(Transformer):
         notes.append(Tree("note", prefixes + note_group))
         for _ in range(1, repetition_num):
             notes.append(Tree("note",  note_group))
+        notes[-1].children.extend(suffixes)
         # unwrapping is done in `syl_musical_symbols`
         return Tree("note_unwrap", notes)
 
