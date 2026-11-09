@@ -254,7 +254,7 @@ class GabcToCommon(Transformer):
         elif repetition.data.startswith("tri"):
             repetition_num = 3
         else:
-            ValueError(f"Unknown repetition type `{repetition.data}`")
+            raise ValueError(f"Unknown repetition type `{repetition.data}`")
         
         notes = []
         prefixes = [x for x in children if isinstance(x, Tree) and x.data == "prefix"]
@@ -285,7 +285,7 @@ class GabcToCommon(Transformer):
         elif count == 3:
             name_prefix = "tri"
         else:
-            ValueError("Expecting 2 or 3 non music tag tokens")
+            raise ValueError("Expecting 2 or 3 non music tag tokens")
         return Tree(f"{name_prefix}stropha", children)
 
     def bi_trivirga(self, children):
@@ -297,7 +297,7 @@ class GabcToCommon(Transformer):
         elif count == 3:
             name_prefix = "tri"
         else:
-            ValueError("Expecting 2 or 3 non music tag tokens")
+            raise ValueError("Expecting 2 or 3 non music tag tokens")
         return Tree(f"{name_prefix}virga", children)
 
     def initio_debilis(self, children):
