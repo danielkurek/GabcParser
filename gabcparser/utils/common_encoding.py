@@ -555,7 +555,18 @@ class MeiGabcToCommon(Transformer):
         self.current_clef_num = None
         self.current_clef_position = None
         self.remove_mislabeled_custos = remove_mislabeled_custos
-    
+        # accidental waiting for the next note to determine its pitch (see `accidental`)
+        self.pending_accidental_pitch = None
+        # pitch name (`a`-`h`) of the most recently converted pitch
+        self.last_pitch_name = None
+
+    @override
+    def transform(self, tree):
+        # reset accidental state between samples
+        self.pending_accidental_pitch = None
+        self.last_pitch_name = None
+        return super().transform(tree)
+
     @staticmethod
     def pitch_to_num(pitch) -> int:
         return pitch[1]*7 + ((ord(pitch[0]) - ord('c')) % 7)
@@ -604,7 +615,6 @@ class MeiGabcToCommon(Transformer):
                             is_rhombus = pitch.children[0].data == "rhombus_pitch"
                         if child.data == "suffix":
                             suffix = child
-                            # we count also accidental as suffix (because it was already converted) but it does not change the result
                             suffix_count += 1
                             # MINUS is already removed in suffix transformation => len is only 1
                             assert len(suffix.children) == 1 and isinstance(suffix.children[0], Tree)
@@ -684,7 +694,8 @@ class MeiGabcToCommon(Transformer):
         self.current_clef = (symbol, number)
         self.current_clef_num = self.pitch_to_num((symbol.lower(), 3))
         self.current_clef_position = 1 + 2*number
-        
+        self.pending_accidental_pitch = None
+
         if children[1].data == "clef_number_remove":
             # this fixes typo in Salzinnes dataset
             return Discard
@@ -707,25 +718,14 @@ class MeiGabcToCommon(Transformer):
         # convert pitch to rhombus if necessary
         pitch = None
         rhombus = False
-        prefix_move = None
         i = 0
         while i < len(children):
             if not isinstance(children[i], Tree):
                 i += 1
                 continue
-            if children[i].data == "prefix_move":
-                prefix_move = children[i]
-                children.pop(i)
-                # do not increment i; next element is at i-th position
-                continue
-            elif children[i].data == "pitch":
+            if children[i].data == "pitch":
                 assert pitch is None
                 pitch = children[i]
-                if prefix_move is not None:
-                    prefix_move.data = "suffix"
-                    children.insert(i+1, prefix_move)
-                    i += 2 # move to next element - ignore moved prefix
-                    continue
             elif children[i].data == "pitch_error":
                 raise RuntimeError("Failed to convert pitch")
             elif children[i].data == "suffix":
@@ -745,6 +745,11 @@ class MeiGabcToCommon(Transformer):
             # pitch is already converted to GABC notation
             assert len(pitch.children) == 2 and isinstance(pitch.children[1], Token)
             pitch_sym = pitch.children[1].value
+            # resolve pitch of the preceding accidental (if any); this note's pitch was the last converted one
+            if self.pending_accidental_pitch is not None:
+                if self.last_pitch_name in ("b", "e"):
+                    self.pending_accidental_pitch.children[1] = Token("PITCH", pitch_sym)
+                self.pending_accidental_pitch = None
             pitch.children = [
                 Tree(
                     "rhombus_pitch" if rhombus else "square_pitch",
@@ -759,14 +764,24 @@ class MeiGabcToCommon(Transformer):
 
         return Tree("note", children)
 
-    def prefix(self, children):
-        assert len(children) == 2 and isinstance(children[0], Tree) and children[0].data == "accidental"
-        # remove space from prefix
-        return Tree("prefix_move", [children[0]])
+    def accidental(self, children):
+        # accidental has no pitch -> default to B closest to clef; replaced in `note` if the next note is E or B
+        assert len(children) == 1 and isinstance(children[0], Tree) and children[0].data in ["flat", "neutral"]
+        assert self.current_clef is not None and self.current_clef_position is not None
+        clef_symbol = self.current_clef[0].lower()
+        offset = -1 if clef_symbol == "c" else 3 # offset to closest b according to clef
+        default_position = self.current_clef_position + offset
+        assert 0 <= default_position <= 12
+        pitch = Tree("square_pitch", [self._MUSIC_TAG, Token("PITCH", chr(ord('a') + default_position))])
+        self.pending_accidental_pitch = pitch
+        return Tree("note", [
+            Tree("pitch", [pitch]),
+            Tree("suffix", [Tree("accidental", [children[0]])]),
+        ])
 
     def accidental_doubled(self, children):
         assert len(children) == 3 and isinstance(children[0], Tree) and children[0].data in ["flat", "neutral"]
-        return Tree("accidental", [children[0]])
+        return self.accidental([children[0]])
 
     def flat(self, children):
         return Tree("flat", [self._MUSIC_TAG, Token("CHAR_X", "x")])
@@ -784,6 +799,7 @@ class MeiGabcToCommon(Transformer):
         assert self.current_clef_num is not None and self.current_clef_position is not None
         assert len(children) == 2
         pitch = children[0].value, int(children[1].value)
+        self.last_pitch_name = pitch[0]
         pitch_num = self.pitch_to_num(pitch)
         pitch_distance = pitch_num - self.current_clef_num
         pitch_position = self.current_clef_position + pitch_distance
@@ -816,6 +832,8 @@ class MeiGabcToCommon(Transformer):
         return Tree("liquescent_two_tails_up", [self._MUSIC_TAG, Token("CHAR_LT", "<")])
     
     def custos(self, children):
+        # custos between accidental and next note -> keep the default accidental pitch
+        self.pending_accidental_pitch = None
         pitch = None
         for child in children:
             if not isinstance(child, Tree):
