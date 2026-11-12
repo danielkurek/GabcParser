@@ -192,9 +192,9 @@ There is no official documentation for this format, everything was reverse engin
 - supported features
   - lyrics - plain text without formatting
   - music - enclosed in parentheses, symbols are separated by a single space character
+    - accidental - flat `f` or natural `n`, standalone symbol without pitch (it does not always belong to the following note)
+      - the pitch is guessed during the conversion process to common grammar
     - notes
-      - prefix - with space separation
-        - accidental - `f` or `n`
       - pitch - `a`-`h` + octave `0`-`9`, e.g. `d3`
       - suffixes
         - virga left/right - `-n`/`-s`
