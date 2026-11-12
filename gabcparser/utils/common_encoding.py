@@ -562,7 +562,10 @@ class MeiGabcToCommon(Transformer):
 
     @override
     def transform(self, tree):
-        # reset accidental state between samples
+        # reset state between samples
+        self.current_clef = None
+        self.current_clef_num = None
+        self.current_clef_position = None
         self.pending_accidental_pitch = None
         self.last_pitch_name = None
         return super().transform(tree)
