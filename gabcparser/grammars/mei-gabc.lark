@@ -16,7 +16,7 @@ clef_number: MINUS? (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
 note: pitch suffix*
 malformed_note: CHAR_S pitch
 
-pitch: "a".."h" NUM
+pitch: "a".."g" NUM
 
 suffix: MINUS (stem | ligated | shape)
 
