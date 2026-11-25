@@ -860,7 +860,6 @@ class MeiGabcToCommon(Transformer):
 
 def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, keep_original_transcript=False, add_original_index=False):
     parser = GabcParser.load_parser(grammar)
-    transformer = None
     match grammar:
         case grammars.GABC:
             transformer = GabcToCommon()
@@ -868,6 +867,11 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
             transformer = SGabcToCommon()
         case grammars.MEI_GABC:
             transformer = MeiGabcToCommon(remove_mislabeled_custos)
+        case grammars.COMMON:
+            # already in common-gabc: validate only (identity transformation)
+            transformer = Transformer()
+        case _:
+            raise ValueError(f"Unsupported grammar '{grammar}'")
     if keep_original_transcript:
         batch[f"{transcript_column}_original"] = list(batch[transcript_column])
     if add_original_index:
@@ -877,10 +881,16 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
         try:
             parsed = parser.parse(text)
             transformed = transformer.transform(parsed)
+            if transformed is None:
+                # everything in the sample was discarded during transformation
+                print(f"Sample at index {indices[i]} is empty after transformation")
+                batch[transcript_column][i] = None
+                continue
             tokens = transformed.scan_values(lambda v: isinstance(v, Token))
             batch[transcript_column][i] = "".join(token.value for token in tokens)
-        except lark_exceptions.UnexpectedCharacters:
-            print(f"Could not parse sample at index {indices[i]}")
+        except lark_exceptions.UnexpectedInput as err:
+            # base class of UnexpectedCharacters, UnexpectedToken and UnexpectedEOF
+            print(f"Could not parse sample at index {indices[i]}: {type(err).__name__}")
             batch[transcript_column][i] = None
         except lark_exceptions.VisitError as err:
             print(f"Could not transform sample (index: {indices[i]}): {err.rule=} {err.orig_exc=}")
