@@ -53,7 +53,8 @@ punctum_mora: MUSIC_TAG DOT
 
 empty_note: MUSIC_TAG CHAR_R
 
-custos: pitch_custos | MUSIC_TAG CHAR_Z (MUSIC_TAG NUM_0)? | MUSIC_TAG CHAR_Z_
+custos: pitch_custos | line_break_maybe_custos
+line_break_maybe_custos: MUSIC_TAG CHAR_Z
 pitch_custos: square_pitch MUSIC_TAG CHAR_PLUS
 
 separation_bar: virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor //TODO: maybe simplify

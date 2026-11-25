@@ -369,10 +369,30 @@ class GabcToCommon(Transformer):
     def custom_ledger_line(self, children):
         return Discard
     
-    def line_break_implicit_custos(self, children):
-        return Tree("implicit_custos", [self._MUSIC_TAG, Token("CHAR_Z_", "Z")])
-    
+    def custos(self, children):
+        # pitch custos (`g+`) is kept, every other custos (`z`, `Z`, `z+`, `Z+`, `z0`) is mapped to `z`
+        # (`z-`, `Z-` are mapped to `z` in `no_custos`)
+        assert len(children) == 1 and isinstance(children[0], Tree)
+        if children[0].data != "pitch_custos":
+            return Tree("custos", [Tree("line_break_maybe_custos", [self._MUSIC_TAG, Token("CHAR_Z", "z")])])
+        pitch_custos = children[0]
+        pitch = pitch_custos.children[0]
+        assert isinstance(pitch, Tree) and pitch.data == "pitch"
+        pitch_token = pitch.children[0].children[1]
+        assert isinstance(pitch_token, Token)
+        # custos has no rhombus variant -> use square pitch
+        return Tree("custos", [Tree("pitch_custos", [
+            Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())]),
+            self._MUSIC_TAG,
+            Token("CHAR_PLUS", "+"),
+        ])])
+
     def no_custos(self, children):
+        assert len(children) == 1 and isinstance(children[0], Tree)
+        if children[0].data == "line_break_no_custos":
+            # line break is preserved; all line breaks are mapped to `z`
+            return Tree("custos", [Tree("line_break_maybe_custos", [self._MUSIC_TAG, Token("CHAR_Z", "z")])])
+        # `[nocustos]` tag
         return Discard
     
     def separation_bar_suffix(self, children):
@@ -473,6 +493,12 @@ class SGabcToCommon(Transformer):
     
     def cont(self, children):
         return Discard # TODO check
+
+    def custos(self, children):
+        # pitch custos (`g+`) is kept, every other custos (`z`, `Z`, `z0`) is mapped to `z`
+        if isinstance(children[0], Tree) and children[0].data == "square_pitch":
+            return Tree("custos", [Tree("pitch_custos", children)])
+        return Tree("custos", [Tree("line_break_maybe_custos", [self._MUSIC_TAG, Token("CHAR_Z", "z")])])
     
     def note(self, children):
         # keep only one `zero_width_space`, delete the rest

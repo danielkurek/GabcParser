@@ -116,13 +116,17 @@ ledger_one_time: MUSIC_TAG NUM (MUSIC_TAG SEMICOLON MUSIC_TAG NUM)?
 ledger_group_start: MUSIC_TAG NUM MUSIC_TAG CURLY_BRACKET_OPEN MUSIC_TAG NUM
 ledger_end_group: MUSIC_TAG CURLY_BRACKET_CLOSE
 
-custos: implicit_custos | line_break_implicit_custos | pitch_custos
-line_break_implicit_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG (CHAR_PLUS | MINUS))?
+custos: implicit_custos | line_break_probably_custos | line_break_implicit_custos | pitch_custos
+line_break_probably_custos: line_break_type // depends on the setting of \greseteolcustos inside GregorioTeX, with default behaviour the custos should appear
+line_break_implicit_custos: line_break_type MUSIC_TAG CHAR_PLUS
 implicit_custos: MUSIC_TAG CHAR_Z MUSIC_TAG NUM_0 // should be probably a prefix according to Gregorio
 pitch_custos: pitch MUSIC_TAG CHAR_PLUS
 no_custos: no_custos_tag | line_break_no_custos
-line_break_no_custos: MUSIC_TAG (CHAR_Z | CHAR_Z_) (MUSIC_TAG MINUS)?
+line_break_no_custos: line_break_type MUSIC_TAG MINUS
 no_custos_tag: MUSIC_TAG SQ_BRACKET_OPEN MUSIC_TAG "n" MUSIC_TAG "o" MUSIC_TAG "c" MUSIC_TAG "u" MUSIC_TAG "s" MUSIC_TAG "t" MUSIC_TAG "o" MUSIC_TAG "s" MUSIC_TAG SQ_BRACKET_CLOSE
+line_break_type: line_break_justified | line_break_ragged
+line_break_justified: MUSIC_TAG CHAR_Z
+line_break_ragged: MUSIC_TAG CHAR_Z_
 
 separation_bar: (virgula | bar_minimis | bar_small | bar_maior | bar_finallis | bar_minor) separation_bar_suffix*
 virgula: MUSIC_TAG BACKTICK (MUSIC_TAG NUM_0)?
