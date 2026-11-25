@@ -493,6 +493,14 @@ class SGabcToCommon(Transformer):
                     continue
                 found_zero_width_space = True
             i += 1
+        if not any(isinstance(child, Tree) and child.data == "pitch" for child in children):
+            # pitch was discarded (e.g. `uncertain_reading`) -> suffixes would be left without a pitch
+            # keep only `zero_width_space` prefix (if present) to preserve neume separation
+            for child in children:
+                if isinstance(child, Tree) and child.data == "prefix" \
+                    and isinstance(child.children[0], Tree) and child.children[0].data == "zero_width_space":
+                    return child
+            return Discard
         return Tree("note", children)
     
     def unknown_note_prefix(self, children):
