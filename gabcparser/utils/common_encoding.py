@@ -52,9 +52,9 @@ class GabcToCommon(Transformer):
             case "V/":
                 new_text = "Ꝟ"
             case "'ae":
-                new_text = "æ'"
+                new_text = "æ" # accent is dropped
             case "'oe":
-                new_text = "œ'"
+                new_text = "œ" # accent is dropped
             case _:
                 new_text = text
         return Tree("syl_lyric_symbols", [Token("SYLLABLE", new_text)])
@@ -582,9 +582,11 @@ class SGabcToCommon(Transformer):
         return Token("SYLLABLE", "Ⱥ")
 
     def OE_LYRIC(self, token):
+        # `óe` (accented), accent is dropped
         return Token("SYLLABLE", "œ")
 
     def AE_LYRIC(self, token):
+        # `áe` (accented), accent is dropped
         return Token("SYLLABLE", "æ")
 
 class MeiGabcToCommon(Transformer):
