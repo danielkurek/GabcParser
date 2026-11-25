@@ -590,8 +590,11 @@ class MeiGabcToCommon(Transformer):
                 ])
         return Tree("syl_musical_symbols", children)
 
-    def syl_musical_symbols_parentheses(self, children):
-        # convert porrectus
+    def _convert_porrectus(self, children):
+        """
+        Convert porrectus in place: the ligature suffix (`-l`) is removed from the notes
+        and the first note of each ligated pair gets the porrectus prefix.
+        """
         prev_porrectus_note = None
         # find notes and store the direct preceding note with porrectus
         for i in range(len(children)):
@@ -646,7 +649,9 @@ class MeiGabcToCommon(Transformer):
             elif isinstance(children[i], Tree):
                 # should not happen
                 prev_porrectus_note = None
-        
+
+    def syl_musical_symbols_parentheses(self, children):
+        self._convert_porrectus(children)
         # remove spaces
         children = [x for x in children if not (isinstance(x, Token) and x.type == "SPACE")]
         return Tree("syl_musical_symbols_parentheses", children)
@@ -675,6 +680,7 @@ class MeiGabcToCommon(Transformer):
                     children[0],
                     Token("PARENTH_CLOSE", ")"),
                 ])
+        self._convert_porrectus(children)
         # filter out spaces
         children = [x for x in children if not (isinstance(x, Token) and x.type == "SPACE")]
         return Tree("syl_musical_symbols", [
