@@ -23,6 +23,13 @@ if __name__ == "__main__":
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
 
+def _only_parentheses(children) -> bool:
+    """True if `children` contain no other tokens than parentheses (i.e. the music would be printed as `()`)."""
+    return all(
+        isinstance(value, Token) and value.type in ("PARENTH_OPEN", "PARENTH_CLOSE")
+        for value in Tree("_", children).scan_values(lambda _: True)
+    )
+
 class GabcToCommon(Transformer):
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
 
@@ -451,6 +458,12 @@ class SGabcToCommon(Transformer):
     
     def illegible_reading(self, children):
         return Discard # TODO: check
+
+    def syl_musical_symbols(self, children):
+        # remove empty parentheses (including ones whose content was discarded)
+        if _only_parentheses(children):
+            return Discard
+        return Tree("syl_musical_symbols", children)
     
     def malformed_music(self, children):
         if len(children) == 0:
@@ -630,6 +643,9 @@ class MeiGabcToCommon(Transformer):
         return Tree(data, children, meta)
     
     def syl_musical_symbols(self, children):
+        # remove empty parentheses (including ones whose content was discarded)
+        if _only_parentheses(children):
+            return Discard
         # add parentheses to symbols that do not have them
         if len(children) == 1 and isinstance(children[0], Tree) and (children[0].data == "separation_bar" or children[0].data == "custos"):
             return Tree("syl_musical_symbols", [
@@ -734,6 +750,9 @@ class MeiGabcToCommon(Transformer):
         self._convert_porrectus(children)
         # filter out spaces
         children = [x for x in children if not (isinstance(x, Token) and x.type == "SPACE")]
+        if _only_parentheses(children):
+            # everything except the opening parenthesis was discarded
+            return Discard
         return Tree("syl_musical_symbols", [
                 Tree("syl_musical_symbols_parentheses", children + [Token("PARENTH_CLOSE", ")")])
             ])
