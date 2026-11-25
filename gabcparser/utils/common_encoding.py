@@ -672,6 +672,8 @@ class MeiGabcToCommon(Transformer):
         return Tree("syllable", children)
     
     def malformed_ending_music(self, children):
+        if len(children) == 0:
+            return Discard
         if len(children) == 1:
             # `malformed_custos` was already converted to `custos` since this is bottom-up
             assert isinstance(children[0], Tree) and children[0].data == "custos"
