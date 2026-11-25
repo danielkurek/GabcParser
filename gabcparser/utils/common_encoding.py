@@ -267,14 +267,14 @@ class GabcToCommon(Transformer):
             suffix = Tree("suffix", [Tree("shape", [Tree("strophicus", [self._MUSIC_TAG, Token("CHAR_S", "s")])])])
             note_group = [new_pitch, suffix]
         elif repetition.data.endswith("virga"):
-            new_pitch = Tree("pitch", [Tree("square_pitch", [self._MUSIC_TAG, Token("CHAR_A2M", pitch_token.value.lower())])])
             suffix = Tree("suffix", [Tree("stem", [Tree("virga_right", [self._MUSIC_TAG, Token("CHAR_V", "v")])])])
             note_group = [new_pitch, suffix]
         else:
             raise ValueError(f"Unknown repetition type `{repetition.data}`")
         notes.append(Tree("note", prefixes + note_group))
         for _ in range(1, repetition_num):
-            notes.append(Tree("note",  note_group))
+            # each note needs its own children list, otherwise extending the last note's children affects the others
+            notes.append(Tree("note", list(note_group)))
         notes[-1].children.extend(suffixes)
         # unwrapping is done in `syl_musical_symbols`
         return Tree("note_unwrap", notes)
