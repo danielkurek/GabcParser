@@ -347,16 +347,29 @@ class GabcToCommon(Transformer):
     
     def position_vertical_episema(self, children):
         return Discard
-    
+
+    def episema_horizontal(self, children):
+        # common-gabc allows at most one position, keep only the first one
+        # (unsupported positions are already discarded by their own callbacks)
+        result = []
+        has_position = False
+        for child in children:
+            if isinstance(child, Tree) and child.data == "position_horizontal_episema":
+                if has_position:
+                    continue
+                has_position = True
+            result.append(child)
+        return Tree("episema_horizontal", result)
+
     def position_horizontal_episema(self, children):
         assert len(children) == 2 and isinstance(children[1], Token)
         if children[1].type != "NUM_0" and children[1].type != "NUM_1":
             return Discard
         return Tree("position_horizontal_episema", children)
-    
+
     def position_tuning_episema(self, children):
         return Discard
-    
+
     def note_accents(self, children):
         # it is rendered as empty note in available data
         return Tree("empty_note", [
