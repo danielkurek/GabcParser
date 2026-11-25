@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--keep_original_transcript", default=False, action="store_true", help="Keep original transcription column (will be renamed by appending `_original`)")
     parser.add_argument("--remove_failed_rows", default=False, action="store_true", help="Remove rows which failed the conversion")
     parser.add_argument("--remove_mislabeled_custos", default=False, action="store_true", help="Remove mislabeled custos (with wrong pitch). Only applies to `mei-gabc` grammar")
+    parser.add_argument("--remove_invalid_samples", default=False, action="store_true", help="Remove samples whose converted transcription is not valid `common-gabc` (by default the conversion is aborted with an error)")
     parser.add_argument("--delete_without_asking", default=False, action="store_true", help="Disable prompt before deletion of output folder '[output_dir]/[dataset]'. It will DELETED WITHOUT ASKING.")
     parser.add_argument("grammar", choices=grammars.supported_grammars, help="GABC grammar variation")
     parser.add_argument("dataset", help="Huggingface dataset name")
@@ -957,8 +958,14 @@ class MeiGabcToCommon(_NormalizeWhitespace):
             Tree("bar_maior", [self._MUSIC_TAG, Token("COLON", ":")])
             ])
 
-def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, keep_original_transcript=False, add_original_index=False):
+_VALID_COMMON_COLUMN = "_valid_common_gabc"
+
+class InvalidCommonEncodingError(RuntimeError):
+    """Converted sample is not valid according to the `common-gabc` grammar."""
+
+def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_custos, keep_original_transcript=False, add_original_index=False, remove_invalid_samples=False):
     parser = GabcParser.load_parser(grammar)
+    common_parser = parser if grammar == grammars.COMMON else GabcParser.load_parser(grammars.COMMON)
     match grammar:
         case grammars.GABC:
             transformer = GabcToCommon()
@@ -975,6 +982,8 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
         batch[f"{transcript_column}_original"] = list(batch[transcript_column])
     if add_original_index:
         batch["original_index"] = [int(x) for x in indices]
+    if remove_invalid_samples:
+        batch[_VALID_COMMON_COLUMN] = [True] * len(batch[transcript_column])
     for i in range(len(batch[transcript_column])):
         text = batch[transcript_column][i]
         try:
@@ -992,7 +1001,6 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
                 print(f"Sample at index {indices[i]} is empty after transformation")
                 batch[transcript_column][i] = None
                 continue
-            batch[transcript_column][i] = text
         except lark_exceptions.UnexpectedInput as err:
             # base class of UnexpectedCharacters, UnexpectedToken and UnexpectedEOF
             print(f"Could not parse sample at index {indices[i]}: {type(err).__name__}")
@@ -1000,6 +1008,19 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
         except lark_exceptions.VisitError as err:
             print(f"Could not transform sample (index: {indices[i]}): {err.rule=} {err.orig_exc=}")
             batch[transcript_column][i] = None
+        else:
+            # validate the converted sample against `common-gabc` grammar
+            try:
+                common_parser.parse(text)
+            except lark_exceptions.UnexpectedInput as err:
+                if not remove_invalid_samples:
+                    raise InvalidCommonEncodingError(
+                        f"Converted sample at index {indices[i]} is not valid common-gabc "
+                        f"(use --remove_invalid_samples to remove such samples):\n{err}\nConverted sample: {text!r}"
+                    ) from err
+                print(f"WARNING: Converted sample at index {indices[i]} is not valid common-gabc, it will be removed: {type(err).__name__}")
+                batch[_VALID_COMMON_COLUMN][i] = False
+            batch[transcript_column][i] = text
     return batch
 
 def main(args: argparse.Namespace):
@@ -1012,9 +1033,13 @@ def main(args: argparse.Namespace):
         transcript_column=args.transcript_column,
         keep_original_transcript=args.keep_original_transcript,
         remove_mislabeled_custos=args.remove_mislabeled_custos,
-        add_original_index=args.remove_failed_rows
+        add_original_index=args.remove_failed_rows or args.remove_invalid_samples,
+        remove_invalid_samples=args.remove_invalid_samples,
     )
     dataset = dataset.map(process_fn, batched=True, with_indices=True, batch_size=256, num_proc=args.threads, load_from_cache_file=False)
+    if args.remove_invalid_samples:
+        dataset = dataset.filter(lambda x: x, input_columns=_VALID_COMMON_COLUMN, num_proc=args.threads, load_from_cache_file=False)
+        dataset = dataset.remove_columns(_VALID_COMMON_COLUMN)
     if args.remove_failed_rows:
         dataset = dataset.filter(lambda x: x is not None, input_columns=args.transcript_column, num_proc=args.threads, load_from_cache_file=False)
     save_path = output_dir / Path(args.dataset).stem
