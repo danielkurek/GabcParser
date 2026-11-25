@@ -108,7 +108,7 @@ PARENTH_OPEN: "("
 PARENTH_CLOSE: ")"
 
 SYLLABLE: /(\w|['&#~%!;:.?\\\/,†+✠»«\[\]ǽœ́ý¶℟æœȺꞦꝞ-])/u | "*"+
-WS: /\s/
+WS: " " // only normal space; other whitespaces are normalized by the converters
 DEGREE: "°"
 COMMA: ","
 SEMICOLON: ";"

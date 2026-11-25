@@ -30,7 +30,30 @@ def _only_parentheses(children) -> bool:
         for value in Tree("_", children).scan_values(lambda _: True)
     )
 
-class GabcToCommon(Transformer):
+def _tokens_to_text(tokens) -> str:
+    """
+    Join token values into the output string, collapsing consecutive whitespace (`WS`) tokens into one
+    and stripping leading and trailing whitespace.
+
+    Spaces can become adjacent either directly (e.g. `\\r\\n`) or after the content between them was discarded (e.g. `a () b`).
+    """
+    result = []
+    previous_ws = False
+    for token in tokens:
+        is_ws = token.type == "WS"
+        if is_ws and previous_ws:
+            continue
+        previous_ws = is_ws
+        result.append(token.value)
+    # only `WS` tokens contain spaces -> stripping spaces removes only leading/trailing `WS`
+    return "".join(result).strip(" ")
+
+class _NormalizeWhitespace(Transformer):
+    """Map every whitespace (`WS` terminal: newline, tab, non-breaking space, ...) to a normal space."""
+    def WS(self, token):
+        return Token("WS", " ")
+
+class GabcToCommon(_NormalizeWhitespace):
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
 
     def __init__(self):
@@ -418,7 +441,7 @@ class GabcToCommon(Transformer):
     def separation_bar_suffix(self, children):
         return Discard
 
-class SGabcToCommon(Transformer):
+class SGabcToCommon(_NormalizeWhitespace):
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
     """
     Lark Transformer to convert `s-gabc` parse tree to common encoding.
@@ -602,7 +625,7 @@ class SGabcToCommon(Transformer):
         # `áe` (accented), accent is dropped
         return Token("SYLLABLE", "æ")
 
-class MeiGabcToCommon(Transformer):
+class MeiGabcToCommon(_NormalizeWhitespace):
     """
     Lark Transformer to convert `mei-gabc` parse tree to common encoding.
 
@@ -963,7 +986,13 @@ def process_batch(batch, indices, grammar, transcript_column, remove_mislabeled_
                 batch[transcript_column][i] = None
                 continue
             tokens = transformed.scan_values(lambda v: isinstance(v, Token))
-            batch[transcript_column][i] = "".join(token.value for token in tokens)
+            text = _tokens_to_text(tokens)
+            if text == "":
+                # sample contained only whitespace after transformation
+                print(f"Sample at index {indices[i]} is empty after transformation")
+                batch[transcript_column][i] = None
+                continue
+            batch[transcript_column][i] = text
         except lark_exceptions.UnexpectedInput as err:
             # base class of UnexpectedCharacters, UnexpectedToken and UnexpectedEOF
             print(f"Could not parse sample at index {indices[i]}: {type(err).__name__}")
