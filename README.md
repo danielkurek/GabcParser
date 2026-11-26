@@ -26,7 +26,14 @@ The grammars follow a consistent structure at the beginning of the parse tree in
 - Depth 1: `syllable`
 - Depth 2: `syl_lyric_symbols` or `syl_musical_symbols`
 
-However, there is an exception in `mei-gabc` grammar. Depth 1 may also contain the `malformed_ending` non-terminal (only as the last non-terminal at this level). To maintain the same structure as `syllable` non-terminal, it differentiates between lyrical and musical non-terminals at the depth 2. In this case we have only descendent of `malformed_ending` and that is `malformed_ending_music`. The consistent structure is helpful in post processing because we typically have different processing for lyrical and musical symbols. We can make this differentiation at a fixed depth, i.e at the depth 2.
+There are the following exceptions:
+
+- `mei-gabc` - Depth 1 may also contain the `malformed_ending` non-terminal (only as the last non-terminal at this level). To maintain the same structure as `syllable` non-terminal, it differentiates between lyrical and musical non-terminals at the depth 2. In this case we have only descendent of `malformed_ending` and that is `malformed_ending_music`.
+- `gabc` - lyric tags that can span multiple syllables group the syllables together:
+  - Depth 2 may also contain `no_line_break_area` (`<nlba>`), `euouae` (`<eu>`) or `style` (`<b>`, `<i>`, `<c>`, `<ul>`, `<sc>`, `<tt>`), which contain nested `syllable` non-terminals
+  - Depth 1 may also contain `euouae_unclosed` or `no_line_break_area_unclosed` (only as the last non-terminal at this level) - the closing tag is missing because the area continues on the next staff line
+
+Music parts are always `syl_musical_symbols` non-terminals (or `malformed_ending_music` in `mei-gabc`), everything else belongs to the lyrics.
 
 The following sections describe each of the implemented grammars in details. Checkout [comparison table](comparison_table.md) for brief overview.
 
@@ -34,33 +41,48 @@ The following sections describe each of the implemented grammars in details. Che
 
 GABC format that is used in [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) (from AMNLT paper). It is normal GABC format with one difference, music tag `<m>` is added to every music symbol.
 
-There is no single formal definition of the GABC format. The grammar was created using [Gregorio (version 6.1.0) reference documentation](https://github.com/gregorio-project/gregorio/releases/tag/v6.1.0) and the corresponding NABC reference (although NABC is not parsed). The created grammar was validated using [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) from AMNLT paper. There are still some samples that do not conform to the grammar. However, majority of these samples include either errors (which led to incorrect render) or NABC notation (which is currently not supported). The following table summarizes the unconforming samples.
+There is no single formal definition of the GABC format. The grammar was created using [Gregorio (version 6.1.0) reference documentation](https://github.com/gregorio-project/gregorio/releases/tag/v6.1.0) and the corresponding NABC reference (although NABC is not parsed). The created grammar was validated using [GregoSynth dataset](https://huggingface.co/datasets/PRAIG/GregoSynth_staffLevel) from AMNLT paper. There are still some samples that do not conform to the grammar: 6051 out of 126579 samples (4.78% error rate). The majority of these samples include errors (mistyped lyric tags, incorrect parentheses pairing, ... which often lead to incorrect render), NABC notation (which is currently not supported) or other unsupported Gregorio features (e.g. `<clear>` tag). Each sample is counted only once, according to the first position where parsing fails (a sample may contain further issues after it).
 
-> [!WARNING]
-> The detailed analysis of errors are outdated, only the total number of errors is current. The grammar was modified to be stricter which means that more samples are not parsable. Generally, the listed errors remain also in the new version of the grammar. However, the new grammar does not allow mistyped lyric formatting tags since they (sometimes) results in errors in the rendered pictures.
-
-| Error                                     | # samples | Notes                                                               |
-|-------------------------------------------|-----------|---------------------------------------------------------------------|
-| Incorrect parentheses pairing             | 1596      | Either `))` (1439 occurrences) or `<m>(` (260 occurrences)          |
-| NABC notation                             | 965       | Occurrence of `<m>|`                                                |
-| `<tag>` modifiers within music part       | 101       | Mainly due to incorrect music part separation (could be corrected)  |
-| `{` and `}` within music part             | 96        | Unknown use (something stylistic)                                   |
-| `v` or `V` as a prefix                    | 67        | Should be a suffix instead                                          |
-| Choral sign `[cs:...]`                    | 55        | Not implemented                                                     |
-| `[alt:...]` above line text within notes  | 45        | Not implemented                                                     |
-| Custom ledger line without note           | 24        | Incorrect syntax (some caused by `!` as suffix)                     |
-| Braces within music (mainly `[ocba:...]`) | 10        | Not implemented                                                     |
-| Macros                                    | 5         | Samples do not contain macro definitions                            |
-| `@[...]` note fusing group                | 2         | Not implemented                                                     |
-| Episema position tuning without episema   | 2         | Incorrect syntax                                                    |
-| Other                                     | 205       | Not yet analyzed                                                    |
-| **Total**                                 | **6146**  | Some samples have more than one issue (counted twice in this table) |
+| Error                                        | # samples | Notes                                                                                                                         |
+| -------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Mistyped lyric tag                           | 2129      | Mostly duplicated letters/brackets - `<ssp>`, `<ii>`, `<spp>`, `<vv>`, `<<i>`, `<sp>>`                                        |
+| Incorrect parentheses pairing - `))`         | 1414      | Extra closing parenthesis after music part                                                                                    |
+| NABC notation                                | 947       | Occurrence of `<m>\|`                                                                                                         |
+| `<clear>` tag                                | 397       | Not implemented (including 3 mistyped `<<clear>`)                                                                             |
+| Incorrect parentheses pairing - `<m>(`       | 165       | Opening parenthesis within music part                                                                                         |
+| Unsupported characters in verbatim TeX `<v>` | 104       | Mainly `'` (TeX accents, e.g. `\'y`) and `*` (e.g. `\textcolor{red}{*}`)                                                      |
+| `(` within lyric tag tagged as music         | 102       | `<v>(</v>` (96) or `<alt>(1)</alt>` (6) - `<m>` inserted inside the tag, e.g. `<v>(<m><<m>/<m>v<m>>...`                       |
+| Unsupported characters in lyrics             | 98        | Khmer script, typographic quotes and dashes, combining diacritics, `℣`, ...                                                   |
+| `{` and `}` within music part                | 91        | Unknown use (something stylistic)                                                                                             |
+| Unpaired closing lyric tag                   | 80        | `</i>` (33), `</nlba>` (25), `</sc>` (15), `</eu>` (6) without opening tag, 1 tag closed in wrong order (`<c><i>...</c></i>`) |
+| Malformed syllable centering `{...}`         | 75        | Unpaired braces, e.g. `{{ia}`                                                                                                 |
+| `v` or `V` as a prefix                       | 65        | At the start of music part or after `/`/`!`, should be a suffix instead                                                       |
+| Invalid character in music                   | 55        | Letters that are not pitches nor valid suffixes (e.g. `u`, `n`, `t`)                                                          |
+| Choral sign `[cs:...]`                       | 55        | Not implemented                                                                                                               |
+| Unclosed `<i>` or `<sc>` tag                 | 42        | Sample ends inside the style (probably closed in the next sample)                                                             |
+| `[alt:...]` above line text within notes     | 39        | Not implemented                                                                                                               |
+| Misplaced number in music                    | 28        | E.g. `h0'_` or `(c4 3)`                                                                                                       |
+| Episema position tuning without episema      | 26        | Incorrect syntax (`[oh:...]`/`[uh:...]` without `_`)                                                                          |
+| Custom ledger line without note              | 26        | Incorrect syntax (some caused by `!` as suffix)                                                                               |
+| Rhythmic sign without note                   | 26        | `'`, `.` or `_` at the start of music part (or after `/` or space)                                                            |
+| Braces within music                          | 23        | Not implemented - `[ub:...]` (10), `[ocba:...]` (7), `[ob:...]` (4), `[ocb:...]` (2)                                          |
+| Non-ASCII characters in music                | 16        | Incorrect syntax                                                                                                              |
+| Backslash before `'` in music                | 13        | E.g. `i_\'` - `\` is not a valid GABC symbol                                                                                  |
+| Other `[...]` within music (macros, ...)     | 12        | Samples do not contain macro definitions                                                                                      |
+| Stray `<` or `>` before music part           | 9         | Incorrect syntax, e.g. ` <(<m>,)`                                                                                             |
+| Unmatched `)` in lyrics                      | 2         | Incorrect syntax                                                                                                              |
+| Other                                        | 12        | Mainly initio debilis `-` at the end of music part                                                                            |
+| **Total**                                    | **6051**  | 4.78% of 126579 samples                                                                                                       |
 
 - supported features (music tags are omitted for better readability)
   - lyrics
     - normal text
     - lyric tags - `<sp>`, `<b>`, `<i>`, `<c>`, `<ul>`, `<sc>`, `<v>`, `<tt>`, `<nlba>`, `<e>`, `<alt>`, `<eu>`
-      - tags support recursive use - with the exception of `<sp>`, `<v>` and `<eu>`
+      - tags support recursive use - with the exception of `<sp>` and `<v>`
+      - styles (`<b>`, `<i>`, `<c>`, `<ul>`, `<sc>`, `<tt>`), no line break area `<nlba>` and euouae `<eu>` can span multiple syllables (including music parts)
+        - styles inside syllable centering can contain only lyrics
+      - both opening and closing tag have to be present and properly nested (stricter than Gregorio, which treats the tags as independent start/end markers)
+        - exception - unclosed `<eu>` or `<nlba>` at the end of the sample (it continues on the next staff line), one unclosed `<eu>` and one unclosed `<nlba>` can be nested in each other
       - TeX support might be limited
     - syllable centering - `{text}`
   - music - enclosed with parentheses and each music symbol has `<m>` as a prefix
@@ -91,7 +113,7 @@ There is no single formal definition of the GABC format. The grammar was created
           - quadratum - `q`
         - accidentals
           - flat/neutral/sharp - `x`/`y`/`#`
-            - parenthesized accidentals - suffix `!`
+            - parenthesized accidentals - suffix `?`
           - soft flat/neutral/sharp - `X`/`Y`/`##`
         - rhythmic sign
           - punctum mora - `.` with optional `0`/`1`
@@ -122,7 +144,6 @@ There is no single formal definition of the GABC format. The grammar was created
     - line break - `z` or `Z` with optional `+`/`-`
     - no custos - `[nocustos]`
 - known unsupported features
-  - `<nlba>` tags within notes
   - macros
   - choral signs
   - braces
@@ -137,18 +158,18 @@ There is no single formal definition of the GABC format. The grammar was created
 
 Systematic GABC notation was proposed by [Thomae et. al](https://doi.org/10.1145/3660570.3660581). Although, the paper includes EBNF grammar, it is not complete and there are some minor mistakes. This work implements the grammar on best effort basis using the original paper and the [AMNLT Solesmes dataset](https://huggingface.co/datasets/PRAIG/Solesmes_staffLevel) as reference.
 
-The grammar was validated using the [Solesmes dataset](https://huggingface.co/datasets/PRAIG/Solesmes_staffLevel). There are still some samples that do not conform to the created grammar (0.82% error rate), summarized in the following table.
+The grammar was validated using the [Solesmes dataset](https://huggingface.co/datasets/PRAIG/Solesmes_staffLevel). There are still some samples that do not conform to the created grammar: 7 out of 854 samples (0.82% error rate), summarized in the following table.
 
 | Error                                               | # samples | Notes                                                     |
-|-----------------------------------------------------|-----------|-----------------------------------------------------------|
+| --------------------------------------------------- | --------- | --------------------------------------------------------- |
 | Wrong placement of separation bar                   | 1         | Separation bar (usually `;`) between pitch and its suffix |
-| Neumatic cut as a suffix (instead of a prefix)      | 1         | Incorrect syntax                                          | 
+| Wrong placement of neumatic cut                     | 1         | Neumatic cut `/` between pitch and its suffix             |
 | Virga as a prefix (instead of a suffix)             | 1         | Incorrect syntax                                          |
 | Mistyped separation bar (`1;` instead of `;1`)      | 1         | Incorrect syntax                                          |
 | Custos syntax wrong ordering (`+i` instead of `i+`) | 1         | Incorrect syntax                                          |
 | Unknown music notation - `h>7V`                     | 1         | Unknown meaning                                           |
 | Unknown music notation - `ViV>`                     | 1         | Unknown meaning (probably typo)                           |
-| **Total**                                           | **7**     |                                                           |
+| **Total**                                           | **7**     | 0.82% of 854 samples                                      |
 
 All errors are caused by the dataset not conforming to the S-GABC grammar which can be easily corrected for the small number of samples. This indicates that there wasn't a strict grammar checking during dataset creation.
 
@@ -167,7 +188,7 @@ All errors are caused by the dataset not conforming to the S-GABC grammar which 
   - parsing malformed music contained in Solesmes dataset - examples
     - `1` at the beginning of music part
     - `!` or `/` at the end of music part
-    - new line inside music part
+    - new line inside music part (`\n`, `\r\n` or `\r`)
     - unknown characters - `|`, `»`, `"`, `”`, `“`
   - `/` as a prefix to clef - e.g. used when clef is changed within single music part
   - added separation bar definition - same as GABC (without suffix modifiers)
@@ -187,7 +208,7 @@ All errors are caused by the dataset not conforming to the S-GABC grammar which 
 
 Pseudo GABC was created in AMNLT paper as a conversion from MEI to a format similar to GABC. It differs from GABC significantly in pitch notation, an absolute pitch is used instead of position within staff lines.
 
-There is no official documentation for this format, everything was reverse engineered from the [Einsiedeln](https://huggingface.co/datasets/PRAIG/Einsiedeln_staffLevel) and [Salzinnes](https://huggingface.co/datasets/PRAIG/Salzinnes_staffLevel) datasets. The grammar was validated using the datasets. Currently, the grammar parses all of the samples in both datasets. However, it was achieved by also parsing malformed samples, e.g. missing closing parentheses, ...
+There is no official documentation for this format, everything was reverse engineered from the [Einsiedeln](https://huggingface.co/datasets/PRAIG/Einsiedeln_staffLevel) and [Salzinnes](https://huggingface.co/datasets/PRAIG/Salzinnes_staffLevel) datasets. The grammar was validated using the datasets. Currently, the grammar parses all of the samples in both datasets (1816 Einsiedeln samples and 2940 Salzinnes samples, 0 unparsable). However, it was achieved by also parsing malformed samples, e.g. missing closing parentheses, ...
 
 - supported features
   - lyrics - plain text without formatting
