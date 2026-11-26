@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "GabcParser"
-version = "2026.0.1"
+version = "2026.1.0"
 dependencies = [
     "lark",
     "datasets",
