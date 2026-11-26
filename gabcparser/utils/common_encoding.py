@@ -55,6 +55,13 @@ class _NormalizeWhitespace(Transformer):
         return Token("WS", " ")
 
 class GabcToCommon(_NormalizeWhitespace):
+    """
+    Lark Transformer to convert `gabc` parse tree to common encoding.
+
+    The focus is on resulting string constructed from the non-terminals.
+    The structure of resulting parse tree might differ to the one produced by `common-gabc` grammar.
+    Lyric tags are dropped; for tags spanning multiple syllables (styles, `<nlba>`, `<eu>`) only the tags are dropped, the syllables are kept.
+    """
     _MUSIC_TAG = Token("MUSIC_TAG", "<m>")
 
     def __init__(self):
@@ -90,26 +97,33 @@ class GabcToCommon(_NormalizeWhitespace):
                 new_text = text
         return Tree("syl_lyric_symbols", [Token("SYLLABLE", new_text)])
 
-    def bold_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def _drop_tags(self, data, children):
+        # drop the tags, keep the syllables
+        return Tree(data, [x for x in children if isinstance(x, Tree)])
 
-    def italic_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def bold(self, children):
+        return self._drop_tags("bold", children)
 
-    def color_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def italic(self, children):
+        return self._drop_tags("italic", children)
 
-    def underline_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def color(self, children):
+        return self._drop_tags("color", children)
 
-    def small_caps_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def underline(self, children):
+        return self._drop_tags("underline", children)
 
-    def teletype_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def small_caps(self, children):
+        return self._drop_tags("small_caps", children)
 
-    def nlba_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def teletype(self, children):
+        return self._drop_tags("teletype", children)
+
+    def no_line_break_area(self, children):
+        return self._drop_tags("no_line_break_area", children)
+
+    def no_line_break_area_unclosed(self, children):
+        return self._drop_tags("no_line_break_area_unclosed", children)
 
     def elision_text(self, children):
         return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
@@ -117,8 +131,11 @@ class GabcToCommon(_NormalizeWhitespace):
     def above_line_text(self, children):
         return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
 
-    def euouae_text(self, children):
-        return Tree("syl_lyric_symbols", [x for x in children if isinstance(x, Tree)])
+    def euouae(self, children):
+        return self._drop_tags("euouae", children)
+
+    def euouae_unclosed(self, children):
+        return self._drop_tags("euouae_unclosed", children)
 
     def tex_text(self, children):
         # no TeX command are allowed

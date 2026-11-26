@@ -1,33 +1,36 @@
 // grammar
+// samples are split by staff lines -> euouae/no line break area can continue on the next line (missing closing tag)
 start: syllable+
-syllable: syl_lyric_symbols | syl_musical_symbols
+     | syllable* _unclosed
+// _... rule is inlined
+_unclosed: euouae_unclosed | no_line_break_area_unclosed
+euouae_unclosed: OPEN_EUOUAE syllable* nested_no_line_break_area_unclosed?
+no_line_break_area_unclosed: OPEN_NLBA syllable* nested_euouae_unclosed?
+nested_euouae_unclosed: OPEN_EUOUAE syllable* -> euouae_unclosed // `-> name` is an alias
+nested_no_line_break_area_unclosed: OPEN_NLBA syllable* -> no_line_break_area_unclosed
+syllable: syl_lyric_symbols | syl_musical_symbols | no_line_break_area | euouae | style{syllable}
+no_line_break_area: OPEN_NLBA syllable* CLOSE_NLBA
+euouae: OPEN_EUOUAE syllable* CLOSE_EUOUAE
+// Lark templates - content is replaced by whatever the {...} contains when used on the right side of the rule
+style{content}: bold{content} | italic{content} | color{content} | underline{content} | small_caps{content} | teletype{content}
+bold{content}: OPEN_BOLD content* CLOSE_BOLD
+italic{content}: OPEN_ITALIC content* CLOSE_ITALIC
+color{content}: OPEN_COLOR content* CLOSE_COLOR
+underline{content}: OPEN_UNDERLINE content* CLOSE_UNDERLINE
+small_caps{content}: OPEN_SMALL_CAPS content* CLOSE_SMALL_CAPS
+teletype{content}: OPEN_TELETYPE content* CLOSE_TELETYPE
 syl_lyric_symbols: modified_lyrics | SYLLABLE | WS
 modified_lyrics: special_lyric
-               | bold_text
-               | italic_text
-               | color_text
-               | underline_text
-               | small_caps_text
-               | teletype_text
-               | nlba_text
                | elision_text
                | above_line_text
-               | euouae_text
                | tex_text
                | syllable_centering
 special_lyric: OPEN_LYRIC_SPECIAL SYLLABLE* CLOSE_LYRIC_SPECIAL
-bold_text: OPEN_BOLD syl_lyric_symbols* CLOSE_BOLD
-italic_text: OPEN_ITALIC syl_lyric_symbols* CLOSE_ITALIC
-color_text: OPEN_COLOR syl_lyric_symbols* CLOSE_COLOR
-underline_text: OPEN_UNDERLINE syl_lyric_symbols* CLOSE_UNDERLINE
-small_caps_text: OPEN_SMALL_CAPS syl_lyric_symbols* CLOSE_SMALL_CAPS
-teletype_text: OPEN_TELETYPE syl_lyric_symbols* CLOSE_TELETYPE
-nlba_text: OPEN_NLBA syl_lyric_symbols* CLOSE_NLBA?
 elision_text: OPEN_ELISION syl_lyric_symbols* CLOSE_ELISION
 above_line_text: OPEN_ABOVE_LINE syl_lyric_symbols* CLOSE_ABOVE_LINE
-euouae_text: OPEN_EUOUAE syllable+ CLOSE_EUOUAE?
 tex_text: OPEN_TEX TEX_SYMBOLS* CLOSE_TEX
-syllable_centering: CURLY_BRACKET_OPEN  syl_lyric_symbols* CURLY_BRACKET_CLOSE
+syllable_centering: CURLY_BRACKET_OPEN _centered_lyrics* CURLY_BRACKET_CLOSE
+_centered_lyrics: syl_lyric_symbols | style{_centered_lyrics}
 
 
 syl_musical_symbols: PARENTH_OPEN musical_symbol* PARENTH_CLOSE

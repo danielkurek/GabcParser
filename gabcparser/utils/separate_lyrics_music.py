@@ -1,4 +1,4 @@
-from lark import Lark, Token, ParseTree
+from lark import Lark, Token
 from lark import exceptions as lark_exceptions
 import csv
 import argparse
@@ -19,15 +19,25 @@ if __name__ == "__main__":
     parser.add_argument("csv_input", help="CSV input file to validate (expected format: ID,TEXT)")
 
 
-def filter_syllables(tree, pred, filtered_symbol=None):
-    for syl in tree.children:
-        assert syl.data in ["syllable", "malformed_ending"]
-        assert len(syl.children) == 1
-        assert syl.children[0].data in ["syl_lyric_symbols", "syl_musical_symbols", "malformed_ending_music"]
-        if pred(syl.children[0]):
-            yield syl
-        elif filtered_symbol is not None:
-            yield Token("filtered_symbol", filtered_symbol)
+# nodes whose whole subtree is music / lyrics (lyric nodes cannot contain music in any grammar)
+# -> the tree is traversed only until one of these nodes is found
+_MUSIC_NODES = ("syl_musical_symbols", "malformed_ending_music")
+_LYRIC_NODES = ("syl_lyric_symbols",)
+
+def _iter_parts(tree):
+    """Yield `(is_music, part)` in the order of the text; `part` is a music/lyric node or a token outside of them (e.g. `<nlba>` tag)."""
+    for child in tree.children:
+        if isinstance(child, Token):
+            yield False, child
+        elif child.data in _MUSIC_NODES:
+            yield True, child
+        elif child.data in _LYRIC_NODES:
+            yield False, child
+        else:
+            yield from _iter_parts(child)
+
+def _tokens(part):
+    return [part] if isinstance(part, Token) else part.scan_values(lambda v: isinstance(v, Token))
 
 def separate_lyrics_music(text: str, parser: Lark, include_music_tag=False, filtered_symbol=None):
     """
@@ -35,21 +45,27 @@ def separate_lyrics_music(text: str, parser: Lark, include_music_tag=False, filt
     `parser`: Lark parser
     `include_music_tag`: include MUSIC_TAG (default: `<m>`) in the music split
     `filtered_symbol`: replace filtered parts with a symbol `filtered_symbol` - e.g. can be used to insert space between lyric/music parts separated with the other part (music/lyric)
+      - each run of consecutive filtered parts is replaced by one symbol
     """
     try:
         tree = parser.parse(text)
-    except lark_exceptions.UnexpectedCharacters:
+    except lark_exceptions.UnexpectedInput:
         return None, None
-    lyric_symbols = filter_syllables(tree, lambda x: x.data == "syl_lyric_symbols", filtered_symbol)
-    music_symbols = filter_syllables(tree, lambda x: x.data == "syl_musical_symbols" or x.data == "malformed_music", filtered_symbol)
-    lyric_tree = ParseTree("start", list(lyric_symbols))
-    music_tree = ParseTree("start", list(music_symbols))
-
-    lyric_tokens = lyric_tree.scan_values(lambda v: isinstance(v, Token))
-    music_tokens = music_tree.scan_values(lambda v: isinstance(v, Token) and (include_music_tag or v.type != "MUSIC_TAG"))
-    lyrics = "".join(token.value for token in lyric_tokens)
-    music = "".join(token.value for token in music_tokens)
-    return lyrics, music
+    lyrics, music = [], []
+    previous_is_music = None
+    for is_music, part in _iter_parts(tree):
+        if filtered_symbol is not None and is_music != previous_is_music:
+            # start of a run -> replaced by one symbol in the other split
+            if is_music:
+                lyrics.append(filtered_symbol)
+            else:
+                music.append(filtered_symbol)
+        previous_is_music = is_music
+        if is_music:
+            music.extend(token.value for token in _tokens(part) if include_music_tag or token.type != "MUSIC_TAG")
+        else:
+            lyrics.extend(token.value for token in _tokens(part))
+    return "".join(lyrics), "".join(music)
 
 def csv_reader(file, skip_lines):
     with open(file) as f:
