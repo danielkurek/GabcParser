@@ -165,4 +165,4 @@ SEMICOLON: ";"
 COLON: ":"
 CARET: "^"
 BACKTICK: "`"
-NEW_LINE: "\n"
+NEW_LINE: /\r\n|\r|\n/
