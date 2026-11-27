@@ -43,7 +43,15 @@ clef_flat: MUSIC_TAG CHAR_B
 clef_number: MUSIC_TAG (NUM_1 | NUM_2 | NUM_3 | NUM_4 | NUM_5)
 linked_clef: MUSIC_TAG AT clef
 
-note: prefix* pitch repetition? suffix*
+// follows GregorioTeX: 
+// - repetitions (`ss`, `sss`, `vv`, `vvv`) are allowed only right after the pitch, should be greedily matched
+// - a prefix (`-gss`, `@gss`) cannot be present
+// - single `s`/`v` can be anywhere among the suffixes
+note: prefix+ pitch suffix*
+    | pitch _note_suffixes?
+_note_suffixes: (strophicus_suffix | distropha_repetition) (suffix_no_s suffix*)?
+              | (virga_suffix | bivirga_repetition) (suffix_no_v suffix*)?
+              | (tri_repetition | suffix_no_sv) suffix*
 
 prefix: initio_debilis | remove_stem
 initio_debilis: MUSIC_TAG MINUS
@@ -59,18 +67,34 @@ square_pitch: MUSIC_TAG "a".."m"
 rhombus_pitch: MUSIC_TAG CHAR_A2M_ rhombus_pitch_shape?
 rhombus_pitch_shape: MUSIC_TAG (NUM_0 | NUM_1 | NUM_2)
 
-repetition: di_tristropha | bi_trivirga
-di_tristropha: MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S (MUSIC_TAG CHAR_S)?
-bi_trivirga: MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V (MUSIC_TAG CHAR_V)?
+// aliases (`-> name`) keep the tree structure of `note: prefix* pitch repetition? suffix*`
+distropha_repetition: distropha -> repetition
+bivirga_repetition: bivirga -> repetition
+tri_repetition: tristropha -> repetition
+              | trivirga -> repetition
+distropha: MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S
+tristropha: MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S MUSIC_TAG CHAR_S
+bivirga: MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V
+trivirga: MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V MUSIC_TAG CHAR_V
 
 
-suffix: stem | shape | accidental | rhythmic_sign | empty_note | note_accents | custom_ledger_line
+suffix: _suffix_no_sv | strophicus_shape | virga_stem
+suffix_no_s: _suffix_no_sv -> suffix 
+           | virga_stem -> suffix
+suffix_no_v: _suffix_no_sv -> suffix 
+           | strophicus_shape -> suffix
+suffix_no_sv: _suffix_no_sv -> suffix
+strophicus_suffix: strophicus_shape -> suffix
+virga_suffix: virga_stem -> suffix
+_suffix_no_sv: stem | shape | accidental | rhythmic_sign | empty_note | note_accents | custom_ledger_line
 
-stem: virga_left | virga_right
+stem: virga_left
+virga_stem: virga_right -> stem
 virga_left: MUSIC_TAG CHAR_V_
 virga_right: MUSIC_TAG CHAR_V
 
-shape: oriscus | quilisma | strophicus | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum | quadratum_with_lines
+strophicus_shape: strophicus -> shape
+shape: oriscus | quilisma | liquescent | liquescent_two_tails_down | liquescent_two_tails_up | quadratum | quadratum_with_lines
 oriscus: oriscus_scapus | oriscus_normal
 oriscus_normal: MUSIC_TAG CHAR_O (MUSIC_TAG (NUM_0 | NUM_1))?
 oriscus_scapus: MUSIC_TAG CHAR_O_ (MUSIC_TAG (NUM_0 | NUM_1))?

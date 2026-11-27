@@ -327,30 +327,6 @@ class GabcToCommon(_NormalizeWhitespace):
         # unwrapping is done in `syl_musical_symbols`
         return Tree("note_unwrap", notes)
 
-    def di_tristropha(self, children):
-        assert len(children) >= 4
-        count = sum(1 for x in children if isinstance(x, Token) and x.type != "MUSIC_TAG")
-        name_prefix = ""
-        if count == 2:
-            name_prefix = "di"
-        elif count == 3:
-            name_prefix = "tri"
-        else:
-            raise ValueError("Expecting 2 or 3 non music tag tokens")
-        return Tree(f"{name_prefix}stropha", children)
-
-    def bi_trivirga(self, children):
-        assert len(children) >= 4
-        count = sum(1 for x in children if isinstance(x, Token) and x.type != "MUSIC_TAG")
-        name_prefix = ""
-        if count == 2:
-            name_prefix = "bi"
-        elif count == 3:
-            name_prefix = "tri"
-        else:
-            raise ValueError("Expecting 2 or 3 non music tag tokens")
-        return Tree(f"{name_prefix}virga", children)
-
     def initio_debilis(self, children):
         # needed for correct porrectus detection; will not be in the output
         return Tree("initio_debilis", [])
